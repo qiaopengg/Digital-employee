@@ -1,0 +1,69 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="OfficeExperience.uss" />
+    <ui:VisualElement name="safe-root" class="safe-root">
+        <ui:VisualElement name="company-hud" class="company-hud">
+            <ui:Label text="我的公司" class="company-name" />
+            <ui:Label text="第 1 天 · 办公室正常运转" class="company-meta" />
+        </ui:VisualElement>
+        <ui:VisualElement class="company-status-row">
+            <ui:Label text="2 人在线" class="company-status-pill online-pill" />
+            <ui:Label text="运营正常" class="company-status-pill operation-pill" />
+        </ui:VisualElement>
+
+        <ui:Label name="phase-banner" text="点一名员工，看看谁现在有空" class="phase-banner" />
+
+        <ui:VisualElement name="lin-chip" class="employee-chip">
+            <ui:Label text="林策" class="chip-name" />
+            <ui:Label name="lin-chip-status" text="现在有空" class="chip-status" />
+        </ui:VisualElement>
+        <ui:VisualElement name="secretary-chip" class="employee-chip secretary-chip">
+            <ui:Label text="小岚" class="chip-name" />
+            <ui:Label name="secretary-chip-status" text="现在有空" class="chip-status" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="employee-card" class="bottom-sheet hidden">
+            <ui:VisualElement class="sheet-handle" />
+            <ui:VisualElement class="employee-title-row">
+                <ui:VisualElement class="avatar-mark" />
+                <ui:VisualElement class="employee-copy">
+                    <ui:Label name="employee-name" text="林策" class="sheet-title" />
+                    <ui:Label name="employee-role" text="策略负责人" class="sheet-subtitle" />
+                </ui:VisualElement>
+                <ui:Label name="employee-status-pill" text="现在有空" class="status-pill" />
+            </ui:VisualElement>
+            <ui:Label name="employee-detail" text="正在等你交代下一件事" class="employee-detail" />
+            <ui:VisualElement class="sheet-actions">
+                <ui:Button name="profile-button" text="查看档案" class="secondary-button" />
+                <ui:Button name="employee-assign-button" text="交代任务" class="primary-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="composer-layer" class="composer-layer hidden">
+            <ui:VisualElement name="composer-scrim" class="composer-scrim" />
+            <ui:VisualElement class="composer-sheet">
+                <ui:VisualElement class="sheet-handle" />
+                <ui:VisualElement class="composer-navigation">
+                    <ui:Button name="cancel-composer-button" text="取消" class="plain-button" />
+                    <ui:Label text="交代任务" class="composer-navigation-title" />
+                    <ui:VisualElement class="navigation-spacer" />
+                </ui:VisualElement>
+                <ui:Label name="composer-recipient" text="交给 林策" class="composer-recipient" />
+                <ui:Label text="你希望员工完成什么？" class="composer-title" />
+                <ui:TextField name="task-input" multiline="true" class="task-input" />
+                <ui:Label text="任务模式" class="mode-title" />
+                <ui:VisualElement class="mode-row">
+                    <ui:Button name="quick-mode-button" text="快速\n先给方向" class="mode-button" />
+                    <ui:Button name="standard-mode-button" text="标准\n完整交付" class="mode-button selected" />
+                    <ui:Button name="deep-mode-button" text="深度\n充分研究" class="mode-button" />
+                </ui:VisualElement>
+                <ui:Button name="submit-task-button" text="把任务交给员工" class="submit-button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="bottom-dock" class="bottom-dock">
+            <ui:Button name="tasks-button" text="任务" class="dock-side-button" />
+            <ui:Button name="assign-button" text="交代任务" class="dock-primary-button" />
+            <ui:Button name="reports-button" text="汇报" class="dock-side-button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
