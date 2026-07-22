@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { AppPalette } from '../theme/palette';
 
-export type TabKey = 'tasks' | 'company' | 'reports' | 'profile';
+export type TabKey = 'office' | 'tasks' | 'company' | 'reports' | 'profile';
 
 type BottomTabBarProps = {
   activeTab: TabKey;
@@ -12,6 +12,7 @@ type BottomTabBarProps = {
 };
 
 const tabs: ReadonlyArray<{ key: TabKey; label: string }> = [
+  { key: 'office', label: '办公室' },
   { key: 'tasks', label: '任务' },
   { key: 'company', label: '公司' },
   { key: 'reports', label: '汇报' },

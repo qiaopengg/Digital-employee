@@ -22,7 +22,7 @@ async function renderApp() {
   return renderer;
 }
 
-test('renders the boss dashboard', async () => {
+test('renders the office home by default', async () => {
   const renderer = await renderApp();
   const output = JSON.stringify(renderer.toJSON());
 
@@ -31,20 +31,20 @@ test('renders the boss dashboard', async () => {
   expect(output).toContain('秘书简报');
 });
 
-test('opens the accessible office summary and returns', async () => {
+test('opens the accessible scene equivalent list and returns', async () => {
   const renderer = await renderApp();
 
   await ReactTestRenderer.act(() => {
     renderer.root
-      .findByProps({ accessibilityLabel: '查看办公室摘要' })
+      .findByProps({ accessibilityLabel: '查看场景等价列表' })
       .props.onPress();
   });
 
-  expect(JSON.stringify(renderer.toJSON())).toContain('非 3D 等价入口');
+  expect(JSON.stringify(renderer.toJSON())).toContain('场景等价入口');
 
   await ReactTestRenderer.act(() => {
     renderer.root
-      .findByProps({ accessibilityLabel: '返回老板工作台' })
+      .findByProps({ accessibilityLabel: '返回办公室' })
       .props.onPress();
   });
 
@@ -53,6 +53,14 @@ test('opens the accessible office summary and returns', async () => {
 
 test('switches between top-level sections', async () => {
   const renderer = await renderApp();
+
+  await ReactTestRenderer.act(() => {
+    renderer.root
+      .findByProps({ accessibilityLabel: '任务标签' })
+      .props.onPress();
+  });
+
+  expect(JSON.stringify(renderer.toJSON())).toContain('真实工作队列');
 
   await ReactTestRenderer.act(() => {
     renderer.root

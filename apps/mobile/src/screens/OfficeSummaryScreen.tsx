@@ -40,7 +40,7 @@ export function OfficeSummaryScreen({
     >
       <View style={styles.navigationRow}>
         <Pressable
-          accessibilityLabel="返回老板工作台"
+          accessibilityLabel="返回办公室"
           accessibilityRole="button"
           hitSlop={8}
           onPress={onClose}
@@ -53,21 +53,21 @@ export function OfficeSummaryScreen({
           <Text style={[styles.backText, { color: palette.accent }]}>返回</Text>
         </Pressable>
         <Text style={[styles.navigationTitle, { color: palette.primaryText }]}>
-          办公室摘要
+          场景等价列表
         </Text>
         <View style={styles.navigationSpacer} />
       </View>
 
       <View style={[styles.notice, { backgroundColor: palette.accentSoft }]}>
         <Text style={[styles.noticeEyebrow, { color: palette.accent }]}>
-          非 3D 等价入口
+          场景等价入口
         </Text>
         <Text style={[styles.noticeTitle, { color: palette.primaryText }]}>
           不进入场景，也能把公司管明白
         </Text>
         <Text style={[styles.noticeBody, { color: palette.secondaryText }]}>
-          这里展示与未来 Unity 办公室相同的员工和任务事实。3D
-          只负责演出，不会改变任务结果。
+          这里与分层 2D 办公室读取同一份员工和任务事实。场景只负责演出，
+          不会改变任务结果。
         </Text>
       </View>
 
@@ -170,13 +170,13 @@ export function OfficeSummaryScreen({
         </View>
       </View>
 
-      <View style={[styles.unityCard, { borderColor: palette.separator }]}>
-        <Text style={[styles.unityTitle, { color: palette.primaryText }]}>
-          3D 办公室尚未加载
+      <View style={[styles.baselineCard, { borderColor: palette.separator }]}>
+        <Text style={[styles.baselineTitle, { color: palette.primaryText }]}>
+          分层 2D 场景基线
         </Text>
-        <Text style={[styles.unityBody, { color: palette.secondaryText }]}>
-          下一开发切片会创建 Unity 场景、员工占位模型和 Idle / Walk / Work
-          状态机。
+        <Text style={[styles.baselineBody, { color: palette.secondaryText }]}>
+          下一开发切片会在 React Native 内接入语义槽位、预设路径和有限姿态，
+          并继续保留此等价入口。
         </Text>
       </View>
     </ScrollView>
@@ -324,17 +324,17 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     marginTop: 6,
   },
-  unityCard: {
+  baselineCard: {
     borderRadius: 18,
     borderStyle: 'dashed',
     borderWidth: 1,
     padding: 16,
   },
-  unityTitle: {
+  baselineTitle: {
     fontSize: 15,
     fontWeight: '700',
   },
-  unityBody: {
+  baselineBody: {
     fontSize: 13,
     lineHeight: 19,
     marginTop: 6,

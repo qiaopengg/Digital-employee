@@ -86,10 +86,10 @@ export function OfficePreviewCard({
       </View>
 
       <Text style={[styles.caption, { color: palette.secondaryText }]}>
-        当前展示非 3D 摘要；Unity 场景将在下一验证切片接入。
+        当前以轻量分层 2D 预览呈现权威状态；完整场景将沿用同一语义数据。
       </Text>
       <Pressable
-        accessibilityLabel="查看办公室摘要"
+        accessibilityLabel="查看场景等价列表"
         accessibilityRole="button"
         onPress={onPress}
         style={({ pressed }) => [
@@ -98,7 +98,7 @@ export function OfficePreviewCard({
           pressed ? styles.pressed : undefined,
         ]}
       >
-        <Text style={styles.buttonText}>查看办公室摘要</Text>
+        <Text style={styles.buttonText}>查看场景等价列表</Text>
       </Pressable>
     </View>
   );

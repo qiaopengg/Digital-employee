@@ -14,9 +14,15 @@ type AppShellProps = {
 };
 
 const sectionContent: Record<
-  Exclude<TabKey, 'tasks'>,
+  Exclude<TabKey, 'office'>,
   { title: string; eyebrow: string; description: string; nextStep: string }
 > = {
+  tasks: {
+    title: '任务',
+    eyebrow: '真实工作队列',
+    description: '进行中、待补充、已完成和失败任务会在这里统一管理。',
+    nextStep: '下一切片接入权威任务状态、筛选和恢复入口。',
+  },
   company: {
     title: '公司',
     eyebrow: '人事与经营',
@@ -39,7 +45,7 @@ const sectionContent: Record<
 
 export function AppShell({ palette }: AppShellProps) {
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<TabKey>('tasks');
+  const [activeTab, setActiveTab] = useState<TabKey>('office');
   const [isOfficeOpen, setIsOfficeOpen] = useState(false);
   const [isTaskComposerOpen, setIsTaskComposerOpen] = useState(false);
   const [localTaskTitle, setLocalTaskTitle] = useState<string>();
@@ -56,7 +62,7 @@ export function AppShell({ palette }: AppShellProps) {
   }
 
   const content =
-    activeTab === 'tasks' ? (
+    activeTab === 'office' ? (
       <BossDashboardScreen
         bottomInset={insets.bottom + 76}
         localTaskTitle={localTaskTitle}
