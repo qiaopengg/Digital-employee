@@ -4,8 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabBar, type TabKey } from './components/BottomTabBar';
 import { TaskComposerSheet } from './components/TaskComposerSheet';
-import { BossDashboardScreen } from './screens/BossDashboardScreen';
 import { OfficeSummaryScreen } from './screens/OfficeSummaryScreen';
+import { OfficeWorkspaceScreen } from './screens/OfficeWorkspaceScreen';
 import { SectionPlaceholderScreen } from './screens/SectionPlaceholderScreen';
 import type { AppPalette } from './theme/palette';
 
@@ -63,11 +63,11 @@ export function AppShell({ palette }: AppShellProps) {
 
   const content =
     activeTab === 'office' ? (
-      <BossDashboardScreen
-        bottomInset={insets.bottom + 76}
+      <OfficeWorkspaceScreen
+        bottomInset={insets.bottom + 64}
         localTaskTitle={localTaskTitle}
         onCreateTask={() => setIsTaskComposerOpen(true)}
-        onOpenOffice={() => setIsOfficeOpen(true)}
+        onOpenEquivalentList={() => setIsOfficeOpen(true)}
         palette={palette}
         topInset={insets.top}
       />

@@ -26,9 +26,9 @@ test('renders the office home by default', async () => {
   const renderer = await renderApp();
   const output = JSON.stringify(renderer.toJSON());
 
-  expect(output).toContain('老板');
-  expect(output).toContain('公司正在运转');
-  expect(output).toContain('秘书简报');
+  expect(output).toContain('标准公司楼层');
+  expect(output).toContain('资料已交给审核经理');
+  expect(output).toContain('休息中');
 });
 
 test('opens the accessible scene equivalent list and returns', async () => {
@@ -36,7 +36,7 @@ test('opens the accessible scene equivalent list and returns', async () => {
 
   await ReactTestRenderer.act(() => {
     renderer.root
-      .findByProps({ accessibilityLabel: '查看场景等价列表' })
+      .findByProps({ accessibilityLabel: '场景列表' })
       .props.onPress();
   });
 
@@ -48,7 +48,65 @@ test('opens the accessible scene equivalent list and returns', async () => {
       .props.onPress();
   });
 
-  expect(JSON.stringify(renderer.toJSON())).toContain('秘书简报');
+  expect(JSON.stringify(renderer.toJSON())).toContain('资料已交给审核经理');
+});
+
+test('opens employee and asset interaction sheets', async () => {
+  const renderer = await renderApp();
+
+  await ReactTestRenderer.act(() => {
+    renderer.root
+      .findByProps({ accessibilityLabel: '沈言，内容员工，休息中' })
+      .props.onPress();
+  });
+
+  expect(JSON.stringify(renderer.toJSON())).toContain('仍可正常派发新任务');
+
+  await ReactTestRenderer.act(() => {
+    renderer.root
+      .findByProps({ accessibilityLabel: '关闭详情' })
+      .props.onPress();
+    renderer.root
+      .findByProps({ accessibilityLabel: '查看咖啡机资产' })
+      .props.onPress();
+  });
+
+  const output = JSON.stringify(renderer.toJSON());
+  expect(output).toContain('已购置 · 使用中');
+  expect(output).toContain('折旧');
+  expect(output).toContain('出售或搬迁');
+
+  await ReactTestRenderer.act(() => {
+    renderer.root.findByProps({ accessibilityLabel: '出售' }).props.onPress();
+  });
+
+  expect(JSON.stringify(renderer.toJSON())).toContain('确认出售 ¥680');
+
+  await ReactTestRenderer.act(() => {
+    renderer.root
+      .findByProps({ accessibilityLabel: '确认出售 ¥680' })
+      .props.onPress();
+  });
+
+  expect(JSON.stringify(renderer.toJSON())).toContain('已出售 · 槽位空闲');
+});
+
+test('advances the visible employee handoff', async () => {
+  const renderer = await renderApp();
+
+  await ReactTestRenderer.act(() => {
+    renderer.root
+      .findByProps({ accessibilityLabel: '查看员工交接对话' })
+      .props.onPress();
+  });
+
+  await ReactTestRenderer.act(() => {
+    renderer.root
+      .findByProps({ accessibilityLabel: '完成本次交接' })
+      .props.onPress();
+  });
+
+  expect(JSON.stringify(renderer.toJSON())).toContain('审核经理已接收资料');
 });
 
 test('switches between top-level sections', async () => {
