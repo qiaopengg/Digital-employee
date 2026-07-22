@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Image,
   ImageBackground,
@@ -5,20 +6,29 @@ import {
   StyleSheet,
   Text,
   View,
+  type LayoutChangeEvent,
 } from 'react-native';
 
+import { useHandoffBehavior } from '../office/useHandoffBehavior';
 import {
+  OFFICE_ANCHORS,
+  getAnchoredTopLeft,
+} from '../office/officePhysicsModel';
+import {
+  getOfficeEmployee,
   officeEmployees,
   type AssetMode,
   type EmployeeId,
   type OfficeEmployee,
 } from '../office/officeSceneModel';
 import type { AppPalette } from '../theme/palette';
+import { AnimatedEmployeeActor } from './AnimatedEmployeeActor';
 
 type InteractiveOfficeSceneProps = {
   assetMode: AssetMode;
-  handoffComplete: boolean;
+  handoffReplayToken: number;
   localTaskTitle?: string;
+  onHandoffComplete: () => void;
   onSelectAsset: () => void;
   onSelectEmployee: (employeeId: EmployeeId) => void;
   onSelectHandoff: () => void;
@@ -27,9 +37,9 @@ type InteractiveOfficeSceneProps = {
 
 type EmployeeActorProps = {
   employee: OfficeEmployee;
-  handoffComplete: boolean;
   onPress: () => void;
   palette: AppPalette;
+  sceneSize: { height: number; width: number };
 };
 
 const officeFloor = require('../assets/office/office-floor.png');
@@ -37,25 +47,41 @@ const coffeeMachine = require('../assets/office/asset-coffee-machine.png');
 
 function EmployeeActor({
   employee,
-  handoffComplete,
   onPress,
   palette,
+  sceneSize,
 }: EmployeeActorProps) {
-  const visibleStatus =
-    handoffComplete && employee.id === 'strategy'
-      ? '交接完成'
-      : handoffComplete && employee.id === 'reviewer'
-      ? '正在审核'
-      : employee.status;
+  const actorConfig =
+    employee.id === 'secretary'
+      ? staticActorConfigs.secretary
+      : staticActorConfigs.break;
+  const anchoredPosition =
+    sceneSize.width > 0
+      ? getAnchoredTopLeft(
+          OFFICE_ANCHORS[actorConfig.anchorId],
+          sceneSize.width,
+          sceneSize.height,
+          actorConfig.width,
+          actorConfig.height,
+          actorConfig.spriteAnchor,
+        )
+      : employee.id === 'secretary'
+      ? actorPositions.secretary
+      : actorPositions.break;
 
   return (
     <Pressable
-      accessibilityLabel={`${employee.name}，${employee.role}，${visibleStatus}`}
+      accessibilityLabel={`${employee.name}，${employee.role}，${employee.status}`}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
         styles.actor,
-        actorPositions[employee.id],
+        {
+          height: actorConfig.height,
+          width: actorConfig.width,
+          zIndex: actorConfig.depth,
+        },
+        anchoredPosition,
         pressed ? styles.pressedActor : undefined,
       ]}
     >
@@ -85,7 +111,7 @@ function EmployeeActor({
             },
           ]}
         >
-          {visibleStatus}
+          {employee.status}
         </Text>
       </View>
       <Image
@@ -99,18 +125,43 @@ function EmployeeActor({
 
 export function InteractiveOfficeScene({
   assetMode,
-  handoffComplete,
+  handoffReplayToken,
   localTaskTitle,
+  onHandoffComplete,
   onSelectAsset,
   onSelectEmployee,
   onSelectHandoff,
   palette,
 }: InteractiveOfficeSceneProps) {
+  const [sceneSize, setSceneSize] = useState({ height: 0, width: 0 });
+  const strategyEmployee = getOfficeEmployee('strategy');
+  const reviewerEmployee = getOfficeEmployee('reviewer');
+  const handoffBehavior = useHandoffBehavior({
+    onComplete: onHandoffComplete,
+    replayToken: handoffReplayToken,
+    sceneSize,
+  });
   const taskTitle = localTaskTitle ?? '新品发布方案';
+  const handoffState =
+    handoffBehavior.phase === 'reviewing'
+      ? '已交接'
+      : handoffBehavior.isRunning
+      ? '现场进行中'
+      : '待启动';
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { height, width } = event.nativeEvent.layout;
+    setSceneSize(current =>
+      current.height === height && current.width === width
+        ? current
+        : { height, width },
+    );
+  };
 
   return (
     <ImageBackground
       imageStyle={styles.backgroundImage}
+      onLayout={handleLayout}
       resizeMode="cover"
       source={officeFloor}
       style={styles.scene}
@@ -167,15 +218,56 @@ export function InteractiveOfficeScene({
         </View>
       </Pressable>
 
-      {officeEmployees.map(employee => (
-        <EmployeeActor
-          employee={employee}
-          handoffComplete={handoffComplete}
-          key={employee.id}
-          onPress={() => onSelectEmployee(employee.id)}
-          palette={palette}
-        />
-      ))}
+      {officeEmployees
+        .filter(
+          employee => employee.id === 'secretary' || employee.id === 'break',
+        )
+        .map(employee => (
+          <EmployeeActor
+            employee={employee}
+            key={employee.id}
+            onPress={() => onSelectEmployee(employee.id)}
+            palette={palette}
+            sceneSize={sceneSize}
+          />
+        ))}
+
+      {sceneSize.width > 0 ? (
+        <>
+          <AnimatedEmployeeActor
+            bob={handoffBehavior.strategyBob}
+            depth={
+              handoffBehavior.phase === 'idle' ||
+              handoffBehavior.phase === 'reviewing'
+                ? 52
+                : 66
+            }
+            employee={strategyEmployee}
+            facing={handoffBehavior.frame.strategy.facing}
+            onPress={() => onSelectEmployee('strategy')}
+            palette={palette}
+            pose={handoffBehavior.frame.strategy.pose}
+            position={handoffBehavior.strategyPosition}
+            status={handoffBehavior.frame.strategy.status}
+          />
+          <AnimatedEmployeeActor
+            bob={handoffBehavior.reviewerBob}
+            depth={
+              handoffBehavior.phase === 'idle' ||
+              handoffBehavior.phase === 'reviewing'
+                ? 52
+                : 67
+            }
+            employee={reviewerEmployee}
+            facing={handoffBehavior.frame.reviewer.facing}
+            onPress={() => onSelectEmployee('reviewer')}
+            palette={palette}
+            pose={handoffBehavior.frame.reviewer.pose}
+            position={handoffBehavior.reviewerPosition}
+            status={handoffBehavior.frame.reviewer.status}
+          />
+        </>
+      ) : undefined}
 
       <Pressable
         accessibilityLabel="查看员工交接对话"
@@ -191,10 +283,10 @@ export function InteractiveOfficeScene({
         ]}
       >
         <Text style={[styles.handoffTask, { color: palette.secondaryText }]}>
-          {taskTitle}
+          {taskTitle} · {handoffState}
         </Text>
         <Text style={[styles.handoffText, { color: palette.primaryText }]}>
-          {handoffComplete ? '审核经理已接收资料' : '资料已交给审核经理'}
+          {handoffBehavior.frame.bubble}
         </Text>
       </Pressable>
 
@@ -212,18 +304,6 @@ export function InteractiveOfficeScene({
 }
 
 const actorPositions = StyleSheet.create({
-  strategy: {
-    height: 154,
-    left: '20%',
-    top: '39%',
-    width: 102,
-  },
-  reviewer: {
-    height: 150,
-    left: '50%',
-    top: '40%',
-    width: 94,
-  },
   secretary: {
     height: 130,
     right: '7%',
@@ -237,6 +317,23 @@ const actorPositions = StyleSheet.create({
     width: 104,
   },
 });
+
+const staticActorConfigs = {
+  secretary: {
+    anchorId: 'secretaryStanding' as const,
+    depth: 36,
+    height: 130,
+    spriteAnchor: { x: 0.5, y: 0.9 },
+    width: 82,
+  },
+  break: {
+    anchorId: 'sofaSeat' as const,
+    depth: 82,
+    height: 145,
+    spriteAnchor: { x: 0.5, y: 0.5 },
+    width: 104,
+  },
+};
 
 const styles = StyleSheet.create({
   scene: {
@@ -280,7 +377,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     position: 'absolute',
-    zIndex: 9,
   },
   actorImage: {
     height: '100%',

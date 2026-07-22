@@ -27,7 +27,7 @@ test('renders the office home by default', async () => {
   const output = JSON.stringify(renderer.toJSON());
 
   expect(output).toContain('标准公司楼层');
-  expect(output).toContain('资料已交给审核经理');
+  expect(output).toContain('林策正在工位整理结构稿');
   expect(output).toContain('休息中');
 });
 
@@ -48,7 +48,7 @@ test('opens the accessible scene equivalent list and returns', async () => {
       .props.onPress();
   });
 
-  expect(JSON.stringify(renderer.toJSON())).toContain('资料已交给审核经理');
+  expect(JSON.stringify(renderer.toJSON())).toContain('林策正在工位整理结构稿');
 });
 
 test('opens employee and asset interaction sheets', async () => {
@@ -91,7 +91,7 @@ test('opens employee and asset interaction sheets', async () => {
   expect(JSON.stringify(renderer.toJSON())).toContain('已出售 · 槽位空闲');
 });
 
-test('advances the visible employee handoff', async () => {
+test('queues the visible employee handoff animation', async () => {
   const renderer = await renderApp();
 
   await ReactTestRenderer.act(() => {
@@ -102,11 +102,13 @@ test('advances the visible employee handoff', async () => {
 
   await ReactTestRenderer.act(() => {
     renderer.root
-      .findByProps({ accessibilityLabel: '完成本次交接' })
+      .findByProps({ accessibilityLabel: '开始交接演示' })
       .props.onPress();
   });
 
-  expect(JSON.stringify(renderer.toJSON())).toContain('审核经理已接收资料');
+  const output = JSON.stringify(renderer.toJSON());
+  expect(output).toContain('林策正在工位整理结构稿');
+  expect(output).not.toContain('真实交接事件');
 });
 
 test('switches between top-level sections', async () => {

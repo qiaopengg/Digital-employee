@@ -48,7 +48,7 @@ export const officeEmployees: ReadonlyArray<OfficeEmployee> = [
     role: '内容员工',
     status: '休息中',
     detail: '短暂休息，不代表离线；仍可正常派发新任务。',
-    image: require('../assets/office/employee-break.png'),
+    image: require('../assets/office/employee-break-sofa.png'),
   },
 ];
 

@@ -69,6 +69,7 @@ export function OfficeWorkspaceScreen({
 }: OfficeWorkspaceScreenProps) {
   const [selection, setSelection] = useState<OfficeSelection>();
   const [handoffComplete, setHandoffComplete] = useState(false);
+  const [handoffReplayToken, setHandoffReplayToken] = useState(0);
   const [assetMode, setAssetMode] = useState<AssetMode>('active');
   const [assetNotice, setAssetNotice] = useState<string>();
 
@@ -88,6 +89,11 @@ export function OfficeWorkspaceScreen({
     setAssetNotice(notices[action]);
   };
 
+  const replayHandoff = () => {
+    setHandoffComplete(false);
+    setHandoffReplayToken(value => value + 1);
+  };
+
   return (
     <View
       style={[
@@ -105,7 +111,7 @@ export function OfficeWorkspaceScreen({
             办公室
           </Text>
           <Text style={[styles.subtitle, { color: palette.secondaryText }]}>
-            4 人在场 · 1 项交接中
+            4 人在场 · {handoffComplete ? '顾宁正在审核' : '1 项交接中'}
           </Text>
         </View>
         <Pressable
@@ -130,8 +136,9 @@ export function OfficeWorkspaceScreen({
       <View style={[styles.sceneFrame, { borderColor: palette.separator }]}>
         <InteractiveOfficeScene
           assetMode={assetMode}
-          handoffComplete={handoffComplete}
+          handoffReplayToken={handoffReplayToken}
           localTaskTitle={localTaskTitle}
+          onHandoffComplete={() => setHandoffComplete(true)}
           onSelectAsset={() => setSelection({ type: 'asset' })}
           onSelectEmployee={employeeId =>
             setSelection({ type: 'employee', employeeId })
@@ -144,7 +151,7 @@ export function OfficeWorkspaceScreen({
       <View style={styles.controlBar}>
         <ControlButton
           label="任务调度"
-          onPress={() => setSelection({ type: 'handoff' })}
+          onPress={replayHandoff}
           palette={palette}
         />
         <ControlButton
@@ -185,7 +192,10 @@ export function OfficeWorkspaceScreen({
             setSelection(undefined);
             onCreateTask();
           }}
-          onFinishHandoff={() => setHandoffComplete(value => !value)}
+          onFinishHandoff={() => {
+            setSelection(undefined);
+            replayHandoff();
+          }}
           palette={palette}
           selection={selection}
         />

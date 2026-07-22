@@ -263,7 +263,7 @@ export function OfficeDetailSheet({
         </Text>
         <View style={styles.actionRow}>
           <ActionButton
-            label={handoffComplete ? '重新演示交接' : '完成本次交接'}
+            label={handoffComplete ? '重新演示交接' : '开始交接演示'}
             onPress={onFinishHandoff}
             palette={palette}
             primary
