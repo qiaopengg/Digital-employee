@@ -45,11 +45,11 @@ export const OFFICE_ANCHORS: Record<OfficeAnchorId, NormalizedPoint> = {
   strategySeat: strategyWorkstation.seat,
   strategyStand: strategyWorkstation.stand,
   strategyEgress: { x: strategyWorkstation.stand.x, y: 0.27 },
-  reviewerVisitor: { x: 0.515, y: reviewerWorkstation.stand.y },
+  reviewerVisitor: { x: 0.29, y: reviewerWorkstation.stand.y },
   reviewerSeat: reviewerWorkstation.seat,
   reviewerStand: reviewerWorkstation.stand,
   secretarySeat: { x: 0.145, y: 0.745 },
-  sofaSeat: { x: 0.75, y: 0.7 },
+  sofaSeat: { x: 0.69, y: 0.69 },
 };
 
 export const OFFICE_SEAT_CONSTRAINTS = {
@@ -65,7 +65,7 @@ export const OFFICE_SEAT_CONSTRAINTS = {
   },
   sofaLeft: {
     anchorId: 'sofaSeat',
-    facing: 'east',
+    facing: 'south',
     interaction: 'rest',
   },
   strategyWorkstation: {
@@ -104,11 +104,6 @@ export const OFFICE_COLLIDERS: ReadonlyArray<OfficeCollider> = [
 
 export const STRATEGY_OUTBOUND_PATH: ReadonlyArray<NormalizedPoint> = [
   OFFICE_ANCHORS.strategyStand,
-  OFFICE_ANCHORS.strategyEgress,
-  {
-    x: OFFICE_ANCHORS.reviewerVisitor.x,
-    y: OFFICE_ANCHORS.strategyEgress.y,
-  },
   OFFICE_ANCHORS.reviewerVisitor,
 ];
 
@@ -117,6 +112,7 @@ export const STRATEGY_RETURN_PATH: ReadonlyArray<NormalizedPoint> = [
 ].reverse();
 
 export const ACTOR_COLLISION_RADIUS = 0.018;
+export const HANDOFF_STANCE_RADIUS = 0.04;
 
 export function normalizedPointToPixels(
   point: NormalizedPoint,

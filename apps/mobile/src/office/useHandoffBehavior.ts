@@ -19,6 +19,7 @@ import {
 } from './officeMotionAnimation';
 import {
   OFFICE_ANCHORS,
+  HANDOFF_STANCE_RADIUS,
   STRATEGY_OUTBOUND_PATH,
   STRATEGY_RETURN_PATH,
   assertActorsDoNotOverlap,
@@ -170,6 +171,7 @@ export function useHandoffBehavior({
       'workstation handoff stance',
       OFFICE_ANCHORS.reviewerVisitor,
       OFFICE_ANCHORS.reviewerStand,
+      HANDOFF_STANCE_RADIUS,
     );
     cancelCurrentRun();
     const currentRunId = runId.current + 1;
@@ -216,7 +218,7 @@ export function useHandoffBehavior({
         return;
       }
 
-      setStrategyFacing('south');
+      setStrategyFacing('east');
       setPhase('strategyTurning');
       if (!(await delay(HANDOFF_TIMING.strategyTurn))) return;
 
@@ -230,7 +232,7 @@ export function useHandoffBehavior({
         return;
       }
 
-      setStrategyFacing('west');
+      setStrategyFacing('east');
       setPhase('reviewerStanding');
       if (
         !(await animateActorPosition(
@@ -243,7 +245,7 @@ export function useHandoffBehavior({
         return;
       }
 
-      setReviewerFacing('east');
+      setReviewerFacing('west');
       setPhase('reviewerTurning');
       if (!(await delay(HANDOFF_TIMING.reviewerTurn))) return;
 
@@ -265,7 +267,7 @@ export function useHandoffBehavior({
         return;
       }
 
-      setStrategyFacing('south');
+      setStrategyFacing('west');
       setPhase('strategyTurningHome');
       if (!(await delay(HANDOFF_TIMING.strategyTurnHome))) return;
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { InteractiveOfficeScene } from '../components/InteractiveOfficeScene';
@@ -10,25 +10,29 @@ import {
 } from '../components/OfficeDetailSheet';
 import type { TabKey } from '../components/BottomTabBar';
 import type { AssetMode } from '../office/officeSceneModel';
+import { OFFICE_BOTTOM_CONTROL } from '../office/officeControlLayout';
+import type { AiTaskExecution } from '../tasks/taskTypes';
 import type { AppPalette } from '../theme/palette';
 
 type OfficeWorkspaceScreenProps = {
   bottomInset: number;
-  localTaskTitle?: string;
   onCreateTask: () => void;
   onNavigate: (tab: TabKey) => void;
   onOpenEquivalentList: () => void;
+  onOpenTaskResult: () => void;
   palette: AppPalette;
+  task?: AiTaskExecution;
   topInset: number;
 };
 
 export function OfficeWorkspaceScreen({
   bottomInset,
-  localTaskTitle,
   onCreateTask,
   onNavigate,
   onOpenEquivalentList,
+  onOpenTaskResult,
   palette,
+  task,
   topInset,
 }: OfficeWorkspaceScreenProps) {
   const [selection, setSelection] = useState<OfficeSelection>();
@@ -36,6 +40,12 @@ export function OfficeWorkspaceScreen({
   const [handoffReplayToken, setHandoffReplayToken] = useState(0);
   const [assetMode, setAssetMode] = useState<AssetMode>('active');
   const [assetNotice, setAssetNotice] = useState<string>();
+
+  useEffect(() => {
+    if (!task?.localId) return;
+    setHandoffComplete(false);
+    setHandoffReplayToken(value => value + 1);
+  }, [task?.localId]);
 
   const handleAssetAction = (action: AssetAction) => {
     const notices: Record<AssetAction, string> = {
@@ -102,14 +112,20 @@ export function OfficeWorkspaceScreen({
           <InteractiveOfficeScene
             assetMode={assetMode}
             handoffReplayToken={handoffReplayToken}
-            localTaskTitle={localTaskTitle}
             onHandoffComplete={() => setHandoffComplete(true)}
             onSelectAsset={() => setSelection({ type: 'asset' })}
             onSelectEmployee={employeeId =>
               setSelection({ type: 'employee', employeeId })
             }
-            onSelectHandoff={() => setSelection({ type: 'handoff' })}
+            onSelectHandoff={() => {
+              if (task?.status === 'completed' || task?.status === 'failed') {
+                onOpenTaskResult();
+                return;
+              }
+              setSelection({ type: 'handoff' });
+            }}
             palette={palette}
+            task={task}
           />
         </View>
         <Pressable
@@ -118,12 +134,17 @@ export function OfficeWorkspaceScreen({
           onPress={onCreateTask}
           style={({ pressed }) => [
             styles.newTaskButton,
-            { backgroundColor: palette.primaryText },
+            {
+              backgroundColor: palette.navigation,
+              borderColor: palette.separator,
+            },
             pressed ? styles.pressed : undefined,
           ]}
         >
-          <Text style={[styles.newTaskMark, { color: palette.card }]}>+</Text>
-          <Text style={[styles.newTaskLabel, { color: palette.card }]}>
+          <Text style={[styles.newTaskMark, { color: palette.accent }]}>+</Text>
+          <Text
+            style={[styles.newTaskLabel, { color: palette.primaryText }]}
+          >
             新任务
           </Text>
         </Pressable>
@@ -222,13 +243,16 @@ const styles = StyleSheet.create({
   },
   newTaskButton: {
     alignItems: 'center',
-    borderRadius: 15,
-    bottom: 12,
+    borderRadius: OFFICE_BOTTOM_CONTROL.borderRadius,
+    borderWidth: StyleSheet.hairlineWidth,
+    bottom: OFFICE_BOTTOM_CONTROL.bottom,
     flexDirection: 'row',
+    height: OFFICE_BOTTOM_CONTROL.height,
     left: 10,
-    minHeight: 42,
+    justifyContent: 'center',
     paddingHorizontal: 13,
     position: 'absolute',
+    width: OFFICE_BOTTOM_CONTROL.width,
     zIndex: 80,
   },
   newTaskMark: {

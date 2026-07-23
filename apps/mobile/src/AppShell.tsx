@@ -4,9 +4,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomTabBar, type TabKey } from './components/BottomTabBar';
 import { TaskComposerSheet } from './components/TaskComposerSheet';
+import { TaskResultSheet } from './components/TaskResultSheet';
 import { OfficeSummaryScreen } from './screens/OfficeSummaryScreen';
 import { OfficeWorkspaceScreen } from './screens/OfficeWorkspaceScreen';
 import { SectionPlaceholderScreen } from './screens/SectionPlaceholderScreen';
+import { submitAiTask } from './tasks/aiTaskClient';
+import type { AiTaskExecution, TaskMode } from './tasks/taskTypes';
 import type { AppPalette } from './theme/palette';
 
 type AppShellProps = {
@@ -48,7 +51,42 @@ export function AppShell({ palette }: AppShellProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('office');
   const [isOfficeOpen, setIsOfficeOpen] = useState(false);
   const [isTaskComposerOpen, setIsTaskComposerOpen] = useState(false);
-  const [localTaskTitle, setLocalTaskTitle] = useState<string>();
+  const [isTaskResultOpen, setIsTaskResultOpen] = useState(false);
+  const [task, setTask] = useState<AiTaskExecution>();
+
+  const submitTask = async (prompt: string, mode: TaskMode) => {
+    const localId = `task-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+    const workingTask: AiTaskExecution = {
+      localId,
+      mode,
+      prompt,
+      status: 'working',
+    };
+
+    setTask(workingTask);
+    setActiveTab('office');
+    setIsTaskComposerOpen(false);
+
+    try {
+      const completedTask = await submitAiTask({ localId, mode, prompt });
+      setTask(current =>
+        current?.localId === localId ? completedTask : current,
+      );
+    } catch (error) {
+      setTask(current =>
+        current?.localId === localId
+          ? {
+              ...current,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : '任务服务暂时无法连接。',
+              status: 'failed',
+            }
+          : current,
+      );
+    }
+  };
 
   if (isOfficeOpen) {
     return (
@@ -65,11 +103,12 @@ export function AppShell({ palette }: AppShellProps) {
     activeTab === 'office' ? (
       <OfficeWorkspaceScreen
         bottomInset={insets.bottom}
-        localTaskTitle={localTaskTitle}
         onCreateTask={() => setIsTaskComposerOpen(true)}
         onNavigate={setActiveTab}
         onOpenEquivalentList={() => setIsOfficeOpen(true)}
+        onOpenTaskResult={() => setIsTaskResultOpen(true)}
         palette={palette}
+        task={task}
         topInset={insets.top}
       />
     ) : (
@@ -94,12 +133,15 @@ export function AppShell({ palette }: AppShellProps) {
       )}
       <TaskComposerSheet
         onClose={() => setIsTaskComposerOpen(false)}
-        onSubmit={title => {
-          setLocalTaskTitle(title);
-          setIsTaskComposerOpen(false);
-        }}
+        onSubmit={submitTask}
         palette={palette}
         visible={isTaskComposerOpen}
+      />
+      <TaskResultSheet
+        onClose={() => setIsTaskResultOpen(false)}
+        palette={palette}
+        task={task}
+        visible={isTaskResultOpen}
       />
     </View>
   );

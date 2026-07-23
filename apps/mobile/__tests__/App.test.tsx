@@ -3,6 +3,31 @@ import ReactTestRenderer from 'react-test-renderer';
 
 import App from '../App';
 
+jest.mock('../src/tasks/aiTaskClient', () => ({
+  submitAiTask: jest.fn(
+    async ({
+      localId,
+      mode,
+      prompt,
+    }: {
+      localId: string;
+      mode: '快速' | '标准' | '深度';
+      prompt: string;
+    }) => ({
+      answer: '这是 DeepSeek 返回的正式测试结果。',
+      completedAt: '2026-07-23T00:00:00.000Z',
+      localId,
+      mode,
+      model: 'deepseek-v4-flash',
+      personaReport: '顾宁：测试结果已完成审核。',
+      prompt,
+      remoteId: 'remote-task',
+      status: 'completed',
+      usage: { completionTokens: 8, promptTokens: 6, totalTokens: 14 },
+    }),
+  ),
+}));
+
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
@@ -29,7 +54,7 @@ test('renders the office home by default', async () => {
   expect(output).toContain('老板办公室，当前空闲');
   expect(output).toContain('新品发布方案');
   expect(output).toContain('预留工位 A');
-  expect(output).toContain('休息中');
+  expect(output).toContain('短暂休息');
   expect(output).not.toContain('林策：结构和风险项已标注');
 });
 
@@ -64,11 +89,13 @@ test('opens employee and asset interaction sheets', async () => {
 
   await ReactTestRenderer.act(() => {
     renderer.root
-      .findByProps({ accessibilityLabel: '沈言，内容员工，休息中' })
+      .findByProps({
+        accessibilityLabel: '沈言，内容执行专员，短暂休息',
+      })
       .props.onPress();
   });
 
-  expect(JSON.stringify(renderer.toJSON())).toContain('仍可正常派发新任务');
+  expect(JSON.stringify(renderer.toJSON())).toContain('内容写作');
 
   await ReactTestRenderer.act(() => {
     renderer.root
@@ -145,7 +172,7 @@ test('switches between top-level sections', async () => {
   expect(JSON.stringify(renderer.toJSON())).toContain('人事与经营');
 });
 
-test('creates an honest local validation task', async () => {
+test('submits a real AI task and opens the result', async () => {
   const renderer = await renderApp();
 
   await ReactTestRenderer.act(() => {
@@ -164,11 +191,21 @@ test('creates an honest local validation task', async () => {
 
   await ReactTestRenderer.act(() => {
     renderer.root
-      .findByProps({ accessibilityLabel: '保存本地验证任务' })
+      .findByProps({ accessibilityLabel: '交给员工处理' })
       .props.onPress();
   });
 
   const output = JSON.stringify(renderer.toJSON());
   expect(output).toContain('整理一份周会提纲');
-  expect(output).toContain('尚未发送给 AI');
+  expect(output).toContain('汇报就绪');
+
+  await ReactTestRenderer.act(() => {
+    renderer.root
+      .findByProps({ accessibilityLabel: '查看交接任务' })
+      .props.onPress();
+  });
+
+  expect(JSON.stringify(renderer.toJSON())).toContain(
+    '这是 DeepSeek 返回的正式测试结果。',
+  );
 });

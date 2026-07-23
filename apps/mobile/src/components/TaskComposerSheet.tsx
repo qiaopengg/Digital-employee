@@ -11,9 +11,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { TaskMode } from '../tasks/taskTypes';
 import type { AppPalette } from '../theme/palette';
-
-type TaskMode = '快速' | '标准' | '深度';
 
 type TaskComposerSheetProps = {
   onClose: () => void;
@@ -178,13 +177,12 @@ export function TaskComposerSheet({
             <Text
               style={[styles.localNoticeTitle, { color: palette.primaryText }]}
             >
-              当前为设备体验验证
+              真实 AI 任务
             </Text>
             <Text
               style={[styles.localNoticeBody, { color: palette.secondaryText }]}
             >
-              提交后只保存在本次 App 会话中，不会调用
-              AI、消耗额度或产生虚拟收入。
+              任务会由服务端安全调用 DeepSeek；供应商密钥不会进入手机或办公室场景。
             </Text>
           </View>
         </View>
@@ -199,7 +197,7 @@ export function TaskComposerSheet({
           ]}
         >
           <Pressable
-            accessibilityLabel="保存本地验证任务"
+            accessibilityLabel="交给员工处理"
             accessibilityRole="button"
             accessibilityState={{ disabled: !canSubmit }}
             disabled={!canSubmit}
@@ -211,7 +209,7 @@ export function TaskComposerSheet({
               pressed ? styles.pressed : undefined,
             ]}
           >
-            <Text style={styles.submitText}>保存本地验证任务</Text>
+            <Text style={styles.submitText}>交给员工处理</Text>
           </Pressable>
         </View>
       </KeyboardAvoidingView>

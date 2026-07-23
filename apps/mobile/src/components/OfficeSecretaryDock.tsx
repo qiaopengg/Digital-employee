@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { TabKey } from './BottomTabBar';
+import { OFFICE_BOTTOM_CONTROL } from '../office/officeControlLayout';
 import type { AppPalette } from '../theme/palette';
 
 type SecretaryDestination = Exclude<TabKey, 'office'>;
@@ -118,12 +119,19 @@ export function OfficeSecretaryDock({
         onPress={() => setIsOpen(value => !value)}
         style={({ pressed }) => [
           styles.launcher,
-          { backgroundColor: palette.secretary },
+          {
+            backgroundColor: palette.navigation,
+            borderColor: palette.separator,
+          },
           pressed ? styles.pressed : undefined,
         ]}
       >
-        <Text style={styles.launcherMark}>秘</Text>
-        <Text style={styles.launcherLabel}>秘书</Text>
+        <Text style={[styles.launcherMark, { color: palette.secretary }]}>
+          秘
+        </Text>
+        <Text style={[styles.launcherLabel, { color: palette.primaryText }]}>
+          秘书
+        </Text>
       </Pressable>
     </View>
   );
@@ -132,7 +140,7 @@ export function OfficeSecretaryDock({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'flex-end',
-    bottom: 12,
+    bottom: OFFICE_BOTTOM_CONTROL.bottom,
     position: 'absolute',
     right: 10,
     zIndex: 80,
@@ -181,21 +189,21 @@ const styles = StyleSheet.create({
   },
   launcher: {
     alignItems: 'center',
-    borderRadius: 17,
-    height: 46,
+    borderRadius: OFFICE_BOTTOM_CONTROL.borderRadius,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    height: OFFICE_BOTTOM_CONTROL.height,
     justifyContent: 'center',
-    width: 46,
+    width: OFFICE_BOTTOM_CONTROL.width,
   },
   launcherMark: {
-    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '900',
   },
   launcherLabel: {
-    color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: '700',
-    marginTop: 1,
+    fontSize: 11,
+    fontWeight: '800',
+    marginLeft: 6,
   },
   pressed: {
     opacity: 0.64,

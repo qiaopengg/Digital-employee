@@ -27,9 +27,10 @@
 
 ## 当前实现
 
-React Native 原型位于 [`apps/mobile`](./apps/mobile)。当前只验证业务壳、五项
-顶级导航、办公室入口、场景等价列表和本地任务交互；尚未连接生产 AI、IAP、
-云端任务、虚拟结算或正式 2D 资源流水线。
+React Native 原型位于 [`apps/mobile`](./apps/mobile)，DeepSeek 服务端 PoC
+位于 [`services/api`](./services/api)。当前已验证业务壳、办公室、真实任务
+提交契约、服务端密钥边界、员工协作演出和原生结果页；尚未进入生产级账号、
+KMS、Temporal、PostgreSQL、IAP、虚拟结算或正式 2D 资源流水线。
 
 ```sh
 cd apps/mobile
@@ -38,5 +39,8 @@ npm run typecheck
 npm run lint -- --max-warnings=0
 npm run test:ci
 ```
+
+DeepSeek PoC 必须把 `DEEPSEEK_API_KEY` 设置在服务端进程环境；密钥不得进入
+移动端、源码、日志或 Git。具体启动方式见 [`services/api/README.md`](./services/api/README.md)。
 
 开始任何横向 P0 开发前，必须先通过风险计划定义的对应 Gate。

@@ -35,6 +35,9 @@
 - Seated-angle before-and-after comparison: `/tmp/office-seated-angle-qa-comparison.png`
 - Updated high-angle sprite sheet: `/tmp/office-seated-v4-assets.png`
 - Updated handoff and return checks: `/tmp/office-seated-angle-handoff.png` and `/tmp/office-seated-angle-return.png`
+- Final chair-back, all-seat, and control capture: `/tmp/office-all-seats-controls-v5.png`
+- Final shortest-path handoff stance: `/tmp/office-shortest-handoff-v5-final.png`
+- Corrected seated asset sheet: `/tmp/office-seated-v5-assets.png`
 
 **Viewport and normalization**
 
@@ -97,6 +100,10 @@
    - P2: the previous seated assets were drawn from an almost eye-level rear camera. Their elongated backs and exposed legs could not align with the steep top-down chairs even after anchor and scale tuning.
    - Fixes: replaced the strategy, reviewer-idle, reviewer-reviewing, and secretary seated rigs with new 65-degree overhead rear views; normalized all transparent rig baselines; and recalibrated the shared work-area and near-field widths to `0.11` and `0.118`.
    - Final review: crown and shoulder planes match the office camera, torsos are visibly foreshortened, legs remain under the desk or chair, hands meet the work surface, chair arms and caster geometry remain in front, and the handoff/return sequence has no scale pop or route collision.
+7. Physical seating, chair-back, route, and bottom-control correction: `/tmp/office-all-seats-controls-v5.png` and `/tmp/office-shortest-handoff-v5-final.png`
+   - P2: the v4 seated assets placed feet behind the pelvis and read as crouching; the chair foreground omitted the backrest; the previous visitor socket produced an unnecessarily long route and incorrect facing; the three bottom controls used unrelated sizes and materials.
+   - Fixes: replaced every workstation and reception seated rig with a pelvis-supported, feet-hidden v5 pose; added the real office-chair backrest crop to the foreground layer; replaced the lounge side-view asset with a sofa-specific high-angle pose and sofa-front occlusion; changed the adjacent workstation route to one collision-free direct segment with an explicit handoff personal-space radius; and assigned all three bottom controls the same 104 × 46 card geometry.
+   - Final review: chair backs visibly lead the seated silhouettes, no employee appears to squat or place feet on the coffee table, handoff actors face one another without overlap, and the bottom controls share height, width, radius, border, and surface treatment.
 
 **Primary interactions tested**
 
@@ -120,6 +127,9 @@
 - [x] Reception chair seat constraint and foreground occlusion
 - [x] Camera-matched high-angle seated rigs
 - [x] Shared seated, standing, and walking scale continuity
+- [x] Chair-back and sofa-front physical occlusion
+- [x] Direct collision-free adjacent-workstation handoff route
+- [x] Equal-size three-control bottom dock
 - [x] Furniture collision checks
 - [x] Compact state markers
 - [x] Phase-bound dialogue

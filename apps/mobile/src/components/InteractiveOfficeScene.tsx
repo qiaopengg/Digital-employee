@@ -17,6 +17,7 @@ import {
 } from '../office/officeSceneModel';
 import { isSeatBoundPose } from '../office/officeSeatModel';
 import type { AppPalette } from '../theme/palette';
+import type { AiTaskExecution } from '../tasks/taskTypes';
 import { AnimatedEmployeeActor } from './AnimatedEmployeeActor';
 import { OfficeSceneStatusLayer } from './OfficeSceneStatusLayer';
 import { OfficeSeatForegroundLayer } from './OfficeSeatForegroundLayer';
@@ -26,12 +27,12 @@ import { StaticEmployeeActor } from './StaticEmployeeActor';
 type InteractiveOfficeSceneProps = {
   assetMode: AssetMode;
   handoffReplayToken: number;
-  localTaskTitle?: string;
   onHandoffComplete: () => void;
   onSelectAsset: () => void;
   onSelectEmployee: (employeeId: EmployeeId) => void;
   onSelectHandoff: () => void;
   palette: AppPalette;
+  task?: AiTaskExecution;
 };
 
 const officeFloor = require('../assets/office/office-floor-v3.png');
@@ -39,12 +40,12 @@ const officeFloor = require('../assets/office/office-floor-v3.png');
 export function InteractiveOfficeScene({
   assetMode,
   handoffReplayToken,
-  localTaskTitle,
   onHandoffComplete,
   onSelectAsset,
   onSelectEmployee,
   onSelectHandoff,
   palette,
+  task,
 }: InteractiveOfficeSceneProps) {
   const [sceneSize, setSceneSize] = useState({ height: 0, width: 0 });
   const strategyEmployee = getOfficeEmployee('strategy');
@@ -54,13 +55,20 @@ export function InteractiveOfficeScene({
     replayToken: handoffReplayToken,
     sceneSize,
   });
-  const taskTitle = localTaskTitle ?? '新品发布方案';
-  const handoffState =
-    handoffBehavior.phase === 'reviewing'
-      ? '已交接 · 审核中'
-      : handoffBehavior.isRunning
-      ? '工位间交接执行中'
-      : '等待重新派单';
+  const taskTitle = task?.prompt ?? '新品发布方案';
+  const handoffState = task
+    ? task.status === 'completed'
+      ? '汇报就绪 · 点击查看'
+      : task.status === 'failed'
+      ? '处理失败 · 点击查看'
+      : handoffBehavior.phase === 'reviewing'
+      ? '模型处理中 · 顾宁复核'
+      : '员工协作中'
+    : handoffBehavior.phase === 'reviewing'
+    ? '已交接 · 审核中'
+    : handoffBehavior.isRunning
+    ? '工位间交接执行中'
+    : '等待重新派单';
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { height, width } = event.nativeEvent.layout;
@@ -158,7 +166,6 @@ export function InteractiveOfficeScene({
       <OfficeSceneStatusLayer
         bubble={handoffBehavior.frame.bubble}
         handoffState={handoffState}
-        localTaskTitle={localTaskTitle}
         onSelectHandoff={onSelectHandoff}
         palette={palette}
         taskTitle={taskTitle}

@@ -109,6 +109,33 @@ export function OfficeDetailSheet({
         <Text style={[styles.subtitle, { color: palette.secondaryText }]}>
           {employee.role} · {employee.detail}
         </Text>
+        <Text style={[styles.profileCopy, { color: palette.primaryText }]}>
+          {employee.personality}
+        </Text>
+        <View style={styles.profileTagRow}>
+          {employee.skills.map(skill => (
+            <View
+              key={skill.name}
+              style={[
+                styles.profileTag,
+                {
+                  backgroundColor: palette.accentSoft,
+                  borderColor: palette.separator,
+                },
+              ]}
+            >
+              <Text style={[styles.profileTagText, { color: palette.accent }]}>
+                {skill.name} · Lv.{skill.level}
+              </Text>
+            </View>
+          ))}
+        </View>
+        <Text style={[styles.profileMeta, { color: palette.secondaryText }]}>
+          {employee.traits.join(' · ')}
+        </Text>
+        <Text style={[styles.profileMeta, { color: palette.secondaryText }]}>
+          协作方式：{employee.collaborationStyle}
+        </Text>
         <View style={styles.actionRow}>
           <ActionButton
             label="交代任务"
@@ -381,6 +408,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     marginTop: 6,
+  },
+  profileCopy: {
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+    marginTop: 10,
+  },
+  profileMeta: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 6,
+  },
+  profileTag: {
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  profileTagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 10,
+  },
+  profileTagText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   metricRow: {
     flexDirection: 'row',

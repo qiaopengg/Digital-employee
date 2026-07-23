@@ -1,11 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import type { AppPalette } from '../theme/palette';
+import { OFFICE_BOTTOM_CONTROL } from '../office/officeControlLayout';
 
 type OfficeSceneStatusLayerProps = {
   bubble?: string;
   handoffState: string;
-  localTaskTitle?: string;
   onSelectHandoff: () => void;
   palette: AppPalette;
   taskTitle: string;
@@ -14,7 +14,6 @@ type OfficeSceneStatusLayerProps = {
 export function OfficeSceneStatusLayer({
   bubble,
   handoffState,
-  localTaskTitle,
   onSelectHandoff,
   palette,
   taskTitle,
@@ -86,15 +85,6 @@ export function OfficeSceneStatusLayer({
         </View>
       </Pressable>
 
-      {localTaskTitle ? (
-        <View style={[styles.localTask, { backgroundColor: palette.card }]}>
-          <Text
-            style={[styles.localTaskText, { color: palette.secondaryText }]}
-          >
-            尚未发送给 AI
-          </Text>
-        </View>
-      ) : undefined}
     </View>
   );
 }
@@ -145,15 +135,16 @@ const styles = StyleSheet.create({
   },
   taskStrip: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: OFFICE_BOTTOM_CONTROL.borderRadius,
     borderWidth: StyleSheet.hairlineWidth,
-    bottom: 10,
+    bottom: OFFICE_BOTTOM_CONTROL.bottom,
     flexDirection: 'row',
-    left: '27%',
+    height: OFFICE_BOTTOM_CONTROL.height,
+    left: '50%',
+    marginLeft: -OFFICE_BOTTOM_CONTROL.width / 2,
     paddingHorizontal: 9,
-    paddingVertical: 7,
     position: 'absolute',
-    right: '18%',
+    width: OFFICE_BOTTOM_CONTROL.width,
   },
   taskIndicator: {
     borderRadius: 3,
@@ -172,18 +163,6 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '600',
     marginTop: 1,
-  },
-  localTask: {
-    borderRadius: 8,
-    bottom: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 5,
-    position: 'absolute',
-    right: 10,
-  },
-  localTaskText: {
-    fontSize: 8,
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.65,

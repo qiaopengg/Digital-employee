@@ -103,9 +103,9 @@ export const HANDOFF_FRAMES: Record<HandoffPhase, HandoffFrame> = {
     documentOwner: 'strategy',
     strategy: {
       activity: 'moving',
-      facing: 'south',
+      facing: 'east',
       pose: 'standingWithFolder',
-      status: '站稳后转向主通道',
+      status: '站稳后转向相邻审核工位',
     },
     reviewer: {
       activity: 'working',
@@ -133,7 +133,7 @@ export const HANDOFF_FRAMES: Record<HandoffPhase, HandoffFrame> = {
     documentOwner: 'strategy',
     strategy: {
       activity: 'handoff',
-      facing: 'west',
+      facing: 'east',
       pose: 'standingWithFolder',
       status: '已到达审核人工位旁',
     },
@@ -148,13 +148,13 @@ export const HANDOFF_FRAMES: Record<HandoffPhase, HandoffFrame> = {
     documentOwner: 'strategy',
     strategy: {
       activity: 'handoff',
-      facing: 'west',
+      facing: 'east',
       pose: 'standingWithFolder',
       status: '等待审核人确认',
     },
     reviewer: {
       activity: 'handoff',
-      facing: 'east',
+      facing: 'west',
       pose: 'standingEmpty',
       status: '站稳后转向提交人',
     },
@@ -164,13 +164,13 @@ export const HANDOFF_FRAMES: Record<HandoffPhase, HandoffFrame> = {
     documentOwner: 'strategy',
     strategy: {
       activity: 'handoff',
-      facing: 'west',
+      facing: 'east',
       pose: 'handoff',
       status: '说明交接重点',
     },
     reviewer: {
       activity: 'handoff',
-      facing: 'east',
+      facing: 'west',
       pose: 'handoff',
       status: '确认审核要求',
     },
@@ -180,13 +180,13 @@ export const HANDOFF_FRAMES: Record<HandoffPhase, HandoffFrame> = {
     documentOwner: 'transfer',
     strategy: {
       activity: 'handoff',
-      facing: 'west',
+      facing: 'east',
       pose: 'handoff',
       status: '交出资料',
     },
     reviewer: {
       activity: 'handoff',
-      facing: 'east',
+      facing: 'west',
       pose: 'handoff',
       status: '接收资料',
     },
@@ -195,7 +195,7 @@ export const HANDOFF_FRAMES: Record<HandoffPhase, HandoffFrame> = {
     documentOwner: 'reviewer',
     strategy: {
       activity: 'handoff',
-      facing: 'west',
+      facing: 'east',
       pose: 'standingEmpty',
       status: '确认交接完成',
     },
@@ -210,9 +210,9 @@ export const HANDOFF_FRAMES: Record<HandoffPhase, HandoffFrame> = {
     documentOwner: 'reviewer',
     strategy: {
       activity: 'moving',
-      facing: 'south',
+      facing: 'west',
       pose: 'standingEmpty',
-      status: '转身准备返回工位',
+      status: '转身沿最短路线返回工位',
     },
     reviewer: {
       activity: 'reviewing',
@@ -225,7 +225,7 @@ export const HANDOFF_FRAMES: Record<HandoffPhase, HandoffFrame> = {
     documentOwner: 'reviewer',
     strategy: {
       activity: 'moving',
-      facing: 'south',
+      facing: 'west',
       pose: 'walkEmpty',
       status: '沿通道正向返回工位',
     },

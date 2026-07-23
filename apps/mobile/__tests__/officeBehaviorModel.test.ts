@@ -9,12 +9,18 @@ import {
   OFFICE_WORKSTATIONS,
 } from '../src/office/officeLayoutModel';
 import {
+  DEFAULT_TASK_TEAM,
+  getOfficeEmployee,
+  officeEmployees,
+} from '../src/office/officeSceneModel';
+import {
   getMovementFacing,
   getStrideCount,
 } from '../src/office/officeMotionModel';
 import {
   OFFICE_ANCHORS,
   OFFICE_SEAT_CONSTRAINTS,
+  HANDOFF_STANCE_RADIUS,
   STRATEGY_OUTBOUND_PATH,
   STRATEGY_RETURN_PATH,
   assertActorsDoNotOverlap,
@@ -43,6 +49,23 @@ test('keeps document ownership consistent across the handoff', () => {
   expect(HANDOFF_FRAMES.reviewing.reviewer.pose).toBe('seatedReviewing');
 });
 
+test('gives every visible employee a real task role, personality, and skills', () => {
+  expect(officeEmployees).toHaveLength(4);
+  officeEmployees.forEach(employee => {
+    expect(employee.personality.length).toBeGreaterThan(10);
+    expect(employee.collaborationStyle.length).toBeGreaterThan(10);
+    expect(employee.skills.length).toBeGreaterThanOrEqual(3);
+    expect(employee.traits.length).toBeGreaterThanOrEqual(4);
+  });
+  expect(getOfficeEmployee('secretary').status).toBe('始终在岗');
+  expect(DEFAULT_TASK_TEAM).toEqual([
+    'secretary',
+    'strategy',
+    'reviewer',
+    'secretary',
+  ]);
+});
+
 test('walks to the reviewer workstation and faces every return segment', () => {
   expect(STRATEGY_OUTBOUND_PATH[0]).toBe(OFFICE_ANCHORS.strategyStand);
   expect(STRATEGY_OUTBOUND_PATH.at(-1)).toBe(OFFICE_ANCHORS.reviewerVisitor);
@@ -56,8 +79,21 @@ test('walks to the reviewer workstation and faces every return segment', () => {
     STRATEGY_RETURN_PATH.slice(1).map((point, index) =>
       getMovementFacing(STRATEGY_RETURN_PATH[index], point),
     ),
-  ).toEqual(['south', 'west', 'north']);
-  expect(HANDOFF_FRAMES.strategyTurningHome.strategy.facing).toBe('south');
+  ).toEqual(['west']);
+  expect(STRATEGY_OUTBOUND_PATH).toHaveLength(2);
+  expect(
+    Math.hypot(
+      OFFICE_ANCHORS.reviewerVisitor.x - OFFICE_ANCHORS.strategyStand.x,
+      OFFICE_ANCHORS.reviewerVisitor.y - OFFICE_ANCHORS.strategyStand.y,
+    ),
+  ).toBeCloseTo(0.105, 3);
+  expect(
+    Math.hypot(
+      OFFICE_ANCHORS.reviewerVisitor.x - OFFICE_ANCHORS.reviewerStand.x,
+      OFFICE_ANCHORS.reviewerVisitor.y - OFFICE_ANCHORS.reviewerStand.y,
+    ),
+  ).toBeGreaterThanOrEqual(HANDOFF_STANCE_RADIUS * 2);
+  expect(HANDOFF_FRAMES.strategyTurningHome.strategy.facing).toBe('west');
   expect(HANDOFF_FRAMES.strategySeating.strategy.facing).toBe('north');
 });
 
@@ -202,10 +238,12 @@ test('binds working and resting poses to furniture-facing constraints', () => {
     interaction: 'computer',
   });
   expect(OFFICE_SEAT_CONSTRAINTS.sofaLeft).toMatchObject({
-    facing: 'east',
+    anchorId: 'sofaSeat',
+    facing: 'south',
     interaction: 'rest',
   });
   expect(OFFICE_ANCHORS.secretarySeat).toEqual({ x: 0.145, y: 0.745 });
+  expect(OFFICE_ANCHORS.sofaSeat).toEqual({ x: 0.69, y: 0.69 });
 });
 
 test('maps semantic scene points to the rendered office size', () => {

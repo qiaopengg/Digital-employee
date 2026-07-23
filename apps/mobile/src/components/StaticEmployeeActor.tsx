@@ -30,15 +30,15 @@ const actorConfigs = {
   },
   break: {
     anchorId: 'sofaSeat' as const,
-    depth: 82,
+    depth: 56,
     fallbackWidth: 42,
     heightRatio: 1.5,
-    spriteAnchor: { x: 0.5, y: 0.46 },
+    spriteAnchor: { x: 0.5, y: 0.53 },
     widthRatio: EMPLOYEE_NEAR_FIELD_WIDTH_RATIO,
   },
 };
 
-const secretarySeatSprite = require('../assets/office/employee-secretary-seated-rig-v4.png');
+const secretarySeatSprite = require('../assets/office/employee-secretary-seated-rig-v5.png');
 
 export function StaticEmployeeActor({
   employee,

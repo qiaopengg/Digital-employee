@@ -6,6 +6,7 @@ import { OFFICE_SEAT_FOREGROUND_DEPTH } from '../office/officeSeatModel';
 type SceneSize = Readonly<{ height: number; width: number }>;
 
 type OccluderRect = Readonly<{
+  borderRadius?: number;
   height: number;
   id: string;
   width: number;
@@ -22,6 +23,14 @@ const SECRETARY_OFFSET = {
 };
 
 const strategyOccluders: ReadonlyArray<OccluderRect> = [
+  {
+    borderRadius: 999,
+    height: 0.05,
+    id: 'backrest',
+    width: 0.071,
+    x: 0.1445,
+    y: 0.204,
+  },
   { height: 0.042, id: 'left-arm', width: 0.013, x: 0.145, y: 0.207 },
   { height: 0.042, id: 'right-arm', width: 0.013, x: 0.216, y: 0.207 },
   { height: 0.012, id: 'seat-front', width: 0.07, x: 0.145, y: 0.244 },
@@ -44,6 +53,14 @@ const seatOccluders = [
     x: rect.x + SECRETARY_OFFSET.x,
     y: rect.y + SECRETARY_OFFSET.y,
   })),
+  {
+    borderRadius: 12,
+    height: 0.044,
+    id: 'sofa-front',
+    width: 0.21,
+    x: 0.635,
+    y: 0.704,
+  },
 ] as const;
 
 export function OfficeSeatForegroundLayer({
@@ -68,6 +85,7 @@ export function OfficeSeatForegroundLayer({
             style={[
               styles.clip,
               {
+                borderRadius: rect.borderRadius,
                 height: rect.height * sceneSize.height,
                 left,
                 top,
