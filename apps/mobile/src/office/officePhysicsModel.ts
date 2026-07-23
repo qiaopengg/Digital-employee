@@ -23,7 +23,8 @@ export type OfficeAnchorId =
   | 'reviewerSeat'
   | 'reviewerStand'
   | 'secretarySeat'
-  | 'sofaSeat';
+  | 'sofaSeat'
+  | 'bossDesk';
 
 export type OfficeFacing = 'east' | 'north' | 'south' | 'west';
 
@@ -50,6 +51,7 @@ export const OFFICE_ANCHORS: Record<OfficeAnchorId, NormalizedPoint> = {
   reviewerStand: reviewerWorkstation.stand,
   secretarySeat: { x: 0.145, y: 0.745 },
   sofaSeat: { x: 0.69, y: 0.69 },
+  bossDesk: { x: 0.78, y: 0.12 },
 };
 
 export const OFFICE_SEAT_CONSTRAINTS = {

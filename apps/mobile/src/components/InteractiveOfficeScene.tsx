@@ -8,6 +8,8 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
+import { OFFICE_ANCHORS, getAnchoredTopLeft } from '../office/officePhysicsModel';
+import { useDeliveryBehavior } from '../office/useDeliveryBehavior';
 import { useHandoffBehavior } from '../office/useHandoffBehavior';
 import {
   getOfficeEmployee,
@@ -19,6 +21,7 @@ import { isSeatBoundPose } from '../office/officeSeatModel';
 import type { AppPalette } from '../theme/palette';
 import type { AiTaskExecution } from '../tasks/taskTypes';
 import { AnimatedEmployeeActor } from './AnimatedEmployeeActor';
+import { DeliveryDocumentIcon } from './DeliveryDocumentIcon';
 import { OfficeSceneStatusLayer } from './OfficeSceneStatusLayer';
 import { OfficeSeatForegroundLayer } from './OfficeSeatForegroundLayer';
 import { OfficeWorkstationHotspots } from './OfficeWorkstationHotspots';
@@ -55,12 +58,27 @@ export function InteractiveOfficeScene({
     replayToken: handoffReplayToken,
     sceneSize,
   });
+  const deliveryBehavior = useDeliveryBehavior({
+    sceneSize,
+    taskKey: task?.localId,
+    taskStatus:
+      task?.status === 'completed' || task?.status === 'failed'
+        ? task.status
+        : undefined,
+  });
   const taskTitle = task?.prompt ?? '新品发布方案';
+  const isDeskReady =
+    deliveryBehavior.phase === 'deskReady' &&
+    (task?.status === 'completed' || task?.status === 'failed');
   const handoffState = task
     ? task.status === 'completed'
-      ? '汇报就绪 · 点击查看'
+      ? isDeskReady
+        ? '汇报就绪 · 点击老板桌查看'
+        : '汇报就绪 · 点击查看'
       : task.status === 'failed'
-      ? '处理失败 · 点击查看'
+      ? isDeskReady
+        ? '处理失败 · 点击老板桌查看'
+        : '处理失败 · 点击查看'
       : handoffBehavior.phase === 'reviewing'
       ? '模型处理中 · 顾宁复核'
       : '员工协作中'
@@ -69,6 +87,17 @@ export function InteractiveOfficeScene({
     : handoffBehavior.isRunning
     ? '工位间交接执行中'
     : '等待重新派单';
+  const bossDeskPixels =
+    sceneSize.width > 0
+      ? getAnchoredTopLeft(
+          OFFICE_ANCHORS.bossDesk,
+          sceneSize.width,
+          sceneSize.height,
+          34,
+          34,
+          { x: 0.5, y: 1 },
+        )
+      : undefined;
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { height, width } = event.nativeEvent.layout;
@@ -162,9 +191,46 @@ export function InteractiveOfficeScene({
         </>
       ) : undefined}
 
+      {sceneSize.width > 0 ? (
+        <DeliveryDocumentIcon
+          opacity={deliveryBehavior.iconOpacity}
+          palette={palette}
+          position={deliveryBehavior.iconPosition}
+        />
+      ) : undefined}
+
       <OfficeSeatForegroundLayer sceneSize={sceneSize} />
+
+      {isDeskReady && bossDeskPixels ? (
+        <Pressable
+          accessibilityLabel="老板桌上有新汇报，点击查看员工工作结果"
+          accessibilityRole="button"
+          onPress={onSelectHandoff}
+          style={({ pressed }) => [
+            styles.deskNotice,
+            {
+              backgroundColor: palette.card,
+              borderColor: palette.secretary,
+              left: bossDeskPixels.left,
+              top: bossDeskPixels.top,
+            },
+            pressed ? styles.pressedActor : undefined,
+          ]}
+        >
+          <View
+            style={[
+              styles.deskNoticeDot,
+              { backgroundColor: palette.accent },
+            ]}
+          />
+          <Text style={[styles.deskNoticeText, { color: palette.secretary }]}>
+            汇报
+          </Text>
+        </Pressable>
+      ) : undefined}
+
       <OfficeSceneStatusLayer
-        bubble={handoffBehavior.frame.bubble}
+        bubble={deliveryBehavior.bubble ?? handoffBehavior.frame.bubble}
         handoffState={handoffState}
         onSelectHandoff={onSelectHandoff}
         palette={palette}
@@ -209,5 +275,25 @@ const styles = StyleSheet.create({
   pressedActor: {
     opacity: 0.72,
     transform: [{ scale: 0.98 }],
+  },
+  deskNotice: {
+    alignItems: 'center',
+    borderRadius: 9,
+    borderWidth: 1.4,
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    position: 'absolute',
+    zIndex: 92,
+  },
+  deskNoticeDot: {
+    borderRadius: 3,
+    height: 6,
+    width: 6,
+  },
+  deskNoticeText: {
+    fontSize: 10,
+    fontWeight: '800',
   },
 });
