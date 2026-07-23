@@ -64,9 +64,10 @@ export function AppShell({ palette }: AppShellProps) {
   const content =
     activeTab === 'office' ? (
       <OfficeWorkspaceScreen
-        bottomInset={insets.bottom + 64}
+        bottomInset={insets.bottom}
         localTaskTitle={localTaskTitle}
         onCreateTask={() => setIsTaskComposerOpen(true)}
+        onNavigate={setActiveTab}
         onOpenEquivalentList={() => setIsOfficeOpen(true)}
         palette={palette}
         topInset={insets.top}
@@ -83,12 +84,14 @@ export function AppShell({ palette }: AppShellProps) {
   return (
     <View style={[styles.container, { backgroundColor: palette.background }]}>
       {content}
-      <BottomTabBar
-        activeTab={activeTab}
-        bottomInset={insets.bottom}
-        onChange={setActiveTab}
-        palette={palette}
-      />
+      {activeTab === 'office' ? undefined : (
+        <BottomTabBar
+          activeTab={activeTab}
+          bottomInset={insets.bottom}
+          onChange={setActiveTab}
+          palette={palette}
+        />
+      )}
       <TaskComposerSheet
         onClose={() => setIsTaskComposerOpen(false)}
         onSubmit={title => {

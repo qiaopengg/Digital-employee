@@ -1,44 +1,66 @@
+import type { OfficeFacing } from './officePhysicsModel';
+
 export type AnimatedEmployeeId = 'strategy' | 'reviewer';
 
 export type EmployeePose =
   | 'seatedIdle'
   | 'seatedReviewing'
+  | 'risingEmpty'
+  | 'risingWithFolder'
+  | 'standingEmpty'
+  | 'standingWithFolder'
   | 'walkWithFolder'
   | 'walkEmpty'
   | 'handoff';
 
-export type Facing = 'left' | 'right';
+export type EmployeeActivity = 'working' | 'moving' | 'handoff' | 'reviewing';
+
+export type Facing = OfficeFacing;
 
 export type HandoffPhase =
   | 'idle'
   | 'strategyStanding'
+  | 'strategyTurning'
   | 'strategyWalking'
   | 'reviewerStanding'
+  | 'reviewerTurning'
   | 'conversation'
   | 'handoff'
-  | 'returning'
+  | 'reviewerSeating'
+  | 'strategyTurningHome'
+  | 'strategyReturning'
+  | 'strategySeating'
   | 'reviewing';
 
+export type DocumentOwner = 'strategy' | 'transfer' | 'reviewer';
+
 export type ActorFrame = Readonly<{
+  activity: EmployeeActivity;
   facing: Facing;
   pose: EmployeePose;
   status: string;
 }>;
 
 export type HandoffFrame = Readonly<{
-  bubble: string;
+  bubble?: string;
+  documentOwner: DocumentOwner;
   reviewer: ActorFrame;
   strategy: ActorFrame;
 }>;
 
 export const HANDOFF_TIMING = {
-  conversation: 700,
-  handoff: 360,
-  idle: 420,
-  outboundWalk: 1100,
-  reviewerApproach: 420,
-  returnWalk: 1100,
-  strategyStand: 280,
+  conversation: 520,
+  handoff: 260,
+  idle: 180,
+  outboundWalk: 1050,
+  reviewerSeating: 260,
+  reviewerStand: 220,
+  reviewerTurn: 120,
+  returnWalk: 1050,
+  strategySeating: 220,
+  strategyStand: 220,
+  strategyTurn: 120,
+  strategyTurnHome: 120,
 } as const;
 
 export const HANDOFF_TOTAL_DURATION = Object.values(HANDOFF_TIMING).reduce(
@@ -48,107 +70,200 @@ export const HANDOFF_TOTAL_DURATION = Object.values(HANDOFF_TIMING).reduce(
 
 export const HANDOFF_FRAMES: Record<HandoffPhase, HandoffFrame> = {
   idle: {
-    bubble: '林策正在工位整理结构稿',
+    documentOwner: 'strategy',
     strategy: {
-      facing: 'right',
+      activity: 'working',
+      facing: 'north',
       pose: 'seatedIdle',
-      status: '整理交接资料',
+      status: '在工位整理交接资料',
     },
     reviewer: {
-      facing: 'left',
+      activity: 'working',
+      facing: 'north',
       pose: 'seatedIdle',
-      status: '在工位等待',
+      status: '在工位处理审核队列',
     },
   },
   strategyStanding: {
-    bubble: '林策：结构稿整理好了，我送过去。',
+    documentOwner: 'strategy',
     strategy: {
-      facing: 'right',
-      pose: 'walkWithFolder',
-      status: '起身取件',
+      activity: 'moving',
+      facing: 'north',
+      pose: 'risingWithFolder',
+      status: '离椅起身并携带资料',
     },
     reviewer: {
-      facing: 'left',
+      activity: 'working',
+      facing: 'north',
       pose: 'seatedIdle',
-      status: '在工位等待',
+      status: '在工位处理审核队列',
+    },
+  },
+  strategyTurning: {
+    documentOwner: 'strategy',
+    strategy: {
+      activity: 'moving',
+      facing: 'south',
+      pose: 'standingWithFolder',
+      status: '站稳后转向主通道',
+    },
+    reviewer: {
+      activity: 'working',
+      facing: 'north',
+      pose: 'seatedIdle',
+      status: '在工位处理审核队列',
     },
   },
   strategyWalking: {
-    bubble: '林策正携带资料前往顾宁工位',
+    documentOwner: 'strategy',
     strategy: {
-      facing: 'right',
+      activity: 'moving',
+      facing: 'south',
       pose: 'walkWithFolder',
-      status: '前往顾宁工位',
+      status: '沿通道前往审核人工位',
     },
     reviewer: {
-      facing: 'left',
+      activity: 'working',
+      facing: 'north',
       pose: 'seatedIdle',
-      status: '在工位等待',
+      status: '在工位处理审核队列',
     },
   },
   reviewerStanding: {
-    bubble: '顾宁注意到同事，起身准备接收',
+    documentOwner: 'strategy',
     strategy: {
-      facing: 'right',
-      pose: 'handoff',
-      status: '等待确认',
+      activity: 'handoff',
+      facing: 'east',
+      pose: 'standingWithFolder',
+      status: '已到达审核人工位旁',
     },
     reviewer: {
-      facing: 'left',
-      pose: 'walkEmpty',
-      status: '起身迎接',
+      activity: 'moving',
+      facing: 'north',
+      pose: 'risingEmpty',
+      status: '离椅起身准备接收',
+    },
+  },
+  reviewerTurning: {
+    documentOwner: 'strategy',
+    strategy: {
+      activity: 'handoff',
+      facing: 'east',
+      pose: 'standingWithFolder',
+      status: '等待审核人确认',
+    },
+    reviewer: {
+      activity: 'handoff',
+      facing: 'west',
+      pose: 'standingEmpty',
+      status: '站稳后转向提交人',
     },
   },
   conversation: {
-    bubble: '林策：结构和风险项已标注，请你重点复核。',
+    bubble: '林策：结构和风险项已标注，请重点复核。',
+    documentOwner: 'strategy',
     strategy: {
-      facing: 'right',
+      activity: 'handoff',
+      facing: 'east',
       pose: 'handoff',
-      status: '说明重点',
+      status: '说明交接重点',
     },
     reviewer: {
-      facing: 'left',
+      activity: 'handoff',
+      facing: 'west',
       pose: 'handoff',
-      status: '确认要求',
+      status: '确认审核要求',
     },
   },
   handoff: {
     bubble: '顾宁：收到，我先核对事实，再检查表达。',
+    documentOwner: 'transfer',
     strategy: {
-      facing: 'right',
+      activity: 'handoff',
+      facing: 'east',
       pose: 'handoff',
       status: '交出资料',
     },
     reviewer: {
-      facing: 'left',
+      activity: 'handoff',
+      facing: 'west',
       pose: 'handoff',
       status: '接收资料',
     },
   },
-  returning: {
-    bubble: '交接完成，双方返回各自工位',
+  reviewerSeating: {
+    documentOwner: 'reviewer',
     strategy: {
-      facing: 'left',
-      pose: 'walkEmpty',
-      status: '返回工位',
+      activity: 'handoff',
+      facing: 'east',
+      pose: 'standingEmpty',
+      status: '确认交接完成',
     },
     reviewer: {
-      facing: 'right',
-      pose: 'walkWithFolder',
-      status: '带资料入座',
+      activity: 'reviewing',
+      facing: 'north',
+      pose: 'risingWithFolder',
+      status: '携资料回到座位',
+    },
+  },
+  strategyTurningHome: {
+    documentOwner: 'reviewer',
+    strategy: {
+      activity: 'moving',
+      facing: 'south',
+      pose: 'standingEmpty',
+      status: '转身准备返回工位',
+    },
+    reviewer: {
+      activity: 'reviewing',
+      facing: 'north',
+      pose: 'seatedReviewing',
+      status: '在工位开始审核',
+    },
+  },
+  strategyReturning: {
+    documentOwner: 'reviewer',
+    strategy: {
+      activity: 'moving',
+      facing: 'south',
+      pose: 'walkEmpty',
+      status: '沿通道正向返回工位',
+    },
+    reviewer: {
+      activity: 'reviewing',
+      facing: 'north',
+      pose: 'seatedReviewing',
+      status: '在工位审核资料',
+    },
+  },
+  strategySeating: {
+    documentOwner: 'reviewer',
+    strategy: {
+      activity: 'working',
+      facing: 'north',
+      pose: 'risingEmpty',
+      status: '回到椅前并面向电脑入座',
+    },
+    reviewer: {
+      activity: 'reviewing',
+      facing: 'north',
+      pose: 'seatedReviewing',
+      status: '在工位审核资料',
     },
   },
   reviewing: {
-    bubble: '顾宁开始审核，林策继续处理后续工作',
+    documentOwner: 'reviewer',
     strategy: {
-      facing: 'right',
+      activity: 'working',
+      facing: 'north',
       pose: 'seatedIdle',
-      status: '继续工作',
+      status: '在工位继续处理后续工作',
     },
     reviewer: {
-      facing: 'left',
+      activity: 'reviewing',
+      facing: 'north',
       pose: 'seatedReviewing',
-      status: '正在审核',
+      status: '在工位审核资料',
     },
   },
 };

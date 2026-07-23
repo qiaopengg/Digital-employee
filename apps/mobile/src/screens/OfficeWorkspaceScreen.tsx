@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { InteractiveOfficeScene } from '../components/InteractiveOfficeScene';
+import { OfficeSecretaryDock } from '../components/OfficeSecretaryDock';
 import {
   OfficeDetailSheet,
   type AssetAction,
   type OfficeSelection,
 } from '../components/OfficeDetailSheet';
+import type { TabKey } from '../components/BottomTabBar';
 import type { AssetMode } from '../office/officeSceneModel';
 import type { AppPalette } from '../theme/palette';
 
@@ -14,55 +16,17 @@ type OfficeWorkspaceScreenProps = {
   bottomInset: number;
   localTaskTitle?: string;
   onCreateTask: () => void;
+  onNavigate: (tab: TabKey) => void;
   onOpenEquivalentList: () => void;
   palette: AppPalette;
   topInset: number;
 };
 
-type ControlButtonProps = {
-  label: string;
-  onPress: () => void;
-  palette: AppPalette;
-  primary?: boolean;
-};
-
-function ControlButton({
-  label,
-  onPress,
-  palette,
-  primary = false,
-}: ControlButtonProps) {
-  return (
-    <Pressable
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.controlButton,
-        {
-          backgroundColor: primary ? palette.primaryText : palette.card,
-          borderColor: primary ? palette.primaryText : palette.separator,
-        },
-        pressed ? styles.pressed : undefined,
-      ]}
-    >
-      <Text
-        numberOfLines={1}
-        style={[
-          styles.controlText,
-          { color: primary ? palette.card : palette.primaryText },
-        ]}
-      >
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 export function OfficeWorkspaceScreen({
   bottomInset,
   localTaskTitle,
   onCreateTask,
+  onNavigate,
   onOpenEquivalentList,
   palette,
   topInset,
@@ -133,41 +97,40 @@ export function OfficeWorkspaceScreen({
         </Pressable>
       </View>
 
-      <View style={[styles.sceneFrame, { borderColor: palette.separator }]}>
-        <InteractiveOfficeScene
-          assetMode={assetMode}
-          handoffReplayToken={handoffReplayToken}
-          localTaskTitle={localTaskTitle}
-          onHandoffComplete={() => setHandoffComplete(true)}
-          onSelectAsset={() => setSelection({ type: 'asset' })}
-          onSelectEmployee={employeeId =>
-            setSelection({ type: 'employee', employeeId })
-          }
-          onSelectHandoff={() => setSelection({ type: 'handoff' })}
-          palette={palette}
-        />
-      </View>
-
-      <View style={styles.controlBar}>
-        <ControlButton
-          label="任务调度"
-          onPress={replayHandoff}
-          palette={palette}
-        />
-        <ControlButton
-          label="安排会议"
-          onPress={() => setSelection({ type: 'handoff' })}
-          palette={palette}
-        />
-        <ControlButton
-          label="新建任务"
+      <View style={styles.sceneStage}>
+        <View style={[styles.sceneFrame, { borderColor: palette.separator }]}>
+          <InteractiveOfficeScene
+            assetMode={assetMode}
+            handoffReplayToken={handoffReplayToken}
+            localTaskTitle={localTaskTitle}
+            onHandoffComplete={() => setHandoffComplete(true)}
+            onSelectAsset={() => setSelection({ type: 'asset' })}
+            onSelectEmployee={employeeId =>
+              setSelection({ type: 'employee', employeeId })
+            }
+            onSelectHandoff={() => setSelection({ type: 'handoff' })}
+            palette={palette}
+          />
+        </View>
+        <Pressable
+          accessibilityLabel="新建任务"
+          accessibilityRole="button"
           onPress={onCreateTask}
-          palette={palette}
-          primary
-        />
-        <ControlButton
-          label="场景列表"
-          onPress={onOpenEquivalentList}
+          style={({ pressed }) => [
+            styles.newTaskButton,
+            { backgroundColor: palette.primaryText },
+            pressed ? styles.pressed : undefined,
+          ]}
+        >
+          <Text style={[styles.newTaskMark, { color: palette.card }]}>+</Text>
+          <Text style={[styles.newTaskLabel, { color: palette.card }]}>
+            新任务
+          </Text>
+        </Pressable>
+        <OfficeSecretaryDock
+          onNavigate={tab => onNavigate(tab)}
+          onOpenSceneList={onOpenEquivalentList}
+          onReplayHandoff={replayHandoff}
           palette={palette}
         />
       </View>
@@ -213,7 +176,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    minHeight: 66,
+    minHeight: 58,
     paddingHorizontal: 4,
   },
   headerCopy: {
@@ -253,23 +216,29 @@ const styles = StyleSheet.create({
     minHeight: 400,
     overflow: 'hidden',
   },
-  controlBar: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 2,
-    paddingVertical: 8,
-  },
-  controlButton: {
-    alignItems: 'center',
-    borderRadius: 11,
-    borderWidth: StyleSheet.hairlineWidth,
+  sceneStage: {
     flex: 1,
-    justifyContent: 'center',
-    minHeight: 42,
-    paddingHorizontal: 5,
+    position: 'relative',
   },
-  controlText: {
-    fontSize: 10,
+  newTaskButton: {
+    alignItems: 'center',
+    borderRadius: 15,
+    bottom: 12,
+    flexDirection: 'row',
+    left: 10,
+    minHeight: 42,
+    paddingHorizontal: 13,
+    position: 'absolute',
+    zIndex: 80,
+  },
+  newTaskMark: {
+    fontSize: 19,
+    fontWeight: '500',
+    marginRight: 5,
+    marginTop: -2,
+  },
+  newTaskLabel: {
+    fontSize: 11,
     fontWeight: '800',
   },
   pressed: {

@@ -12,11 +12,11 @@ export type NormalizedRect = Readonly<{
 
 export type OfficeAnchorId =
   | 'strategySeat'
+  | 'strategyStand'
   | 'strategyEgress'
-  | 'strategyMeet'
+  | 'reviewerVisitor'
   | 'reviewerSeat'
-  | 'reviewerEgress'
-  | 'reviewerMeet'
+  | 'reviewerStand'
   | 'secretaryStanding'
   | 'sofaSeat';
 
@@ -34,12 +34,12 @@ export type OfficeCollider = Readonly<{
 }>;
 
 export const OFFICE_ANCHORS: Record<OfficeAnchorId, NormalizedPoint> = {
-  strategySeat: { x: 0.295, y: 0.515 },
-  strategyEgress: { x: 0.295, y: 0.64 },
-  strategyMeet: { x: 0.46, y: 0.625 },
-  reviewerSeat: { x: 0.665, y: 0.515 },
-  reviewerEgress: { x: 0.665, y: 0.64 },
-  reviewerMeet: { x: 0.56, y: 0.625 },
+  strategySeat: { x: 0.298, y: 0.552 },
+  strategyStand: { x: 0.298, y: 0.585 },
+  strategyEgress: { x: 0.298, y: 0.625 },
+  reviewerVisitor: { x: 0.54, y: 0.585 },
+  reviewerSeat: { x: 0.668, y: 0.552 },
+  reviewerStand: { x: 0.668, y: 0.585 },
   secretaryStanding: { x: 0.84, y: 0.36 },
   sofaSeat: { x: 0.15, y: 0.82 },
 };
@@ -65,23 +65,27 @@ export const OFFICE_SEAT_CONSTRAINTS = {
 export const OFFICE_COLLIDERS: ReadonlyArray<OfficeCollider> = [
   {
     id: 'kitchenette',
-    rect: { height: 0.21, width: 0.86, x: 0.06, y: 0 },
+    rect: { height: 0.14, width: 0.86, x: 0.06, y: 0 },
   },
   {
-    id: 'workstation-top-left',
-    rect: { height: 0.17, width: 0.28, x: 0.16, y: 0.235 },
-  },
-  {
-    id: 'workstation-top-right',
-    rect: { height: 0.17, width: 0.28, x: 0.56, y: 0.235 },
+    id: 'boss-office',
+    rect: { height: 0.28, width: 0.66, x: 0.16, y: 0.14 },
   },
   {
     id: 'workstation-strategy',
-    rect: { height: 0.16, width: 0.28, x: 0.15, y: 0.43 },
+    rect: { height: 0.06, width: 0.23, x: 0.19, y: 0.465 },
   },
   {
     id: 'workstation-reviewer',
-    rect: { height: 0.16, width: 0.28, x: 0.56, y: 0.43 },
+    rect: { height: 0.06, width: 0.23, x: 0.56, y: 0.465 },
+  },
+  {
+    id: 'workstation-reserved-a',
+    rect: { height: 0.045, width: 0.16, x: 0.22, y: 0.675 },
+  },
+  {
+    id: 'workstation-reserved-b',
+    rect: { height: 0.045, width: 0.16, x: 0.42, y: 0.675 },
   },
   {
     id: 'sofa',
@@ -94,25 +98,14 @@ export const OFFICE_COLLIDERS: ReadonlyArray<OfficeCollider> = [
 ];
 
 export const STRATEGY_OUTBOUND_PATH: ReadonlyArray<NormalizedPoint> = [
+  OFFICE_ANCHORS.strategyStand,
   OFFICE_ANCHORS.strategyEgress,
-  { x: OFFICE_ANCHORS.strategyEgress.x, y: 0.65 },
-  { x: OFFICE_ANCHORS.strategyMeet.x, y: 0.65 },
-  OFFICE_ANCHORS.strategyMeet,
+  { x: OFFICE_ANCHORS.reviewerVisitor.x, y: OFFICE_ANCHORS.strategyEgress.y },
+  OFFICE_ANCHORS.reviewerVisitor,
 ];
 
 export const STRATEGY_RETURN_PATH: ReadonlyArray<NormalizedPoint> = [
   ...STRATEGY_OUTBOUND_PATH,
-].reverse();
-
-export const REVIEWER_APPROACH_PATH: ReadonlyArray<NormalizedPoint> = [
-  OFFICE_ANCHORS.reviewerEgress,
-  { x: OFFICE_ANCHORS.reviewerEgress.x, y: 0.65 },
-  { x: OFFICE_ANCHORS.reviewerMeet.x, y: 0.65 },
-  OFFICE_ANCHORS.reviewerMeet,
-];
-
-export const REVIEWER_RETURN_PATH: ReadonlyArray<NormalizedPoint> = [
-  ...REVIEWER_APPROACH_PATH,
 ].reverse();
 
 export const ACTOR_COLLISION_RADIUS = 0.018;

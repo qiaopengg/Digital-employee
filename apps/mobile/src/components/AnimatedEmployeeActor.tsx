@@ -1,63 +1,50 @@
-import { useEffect, useRef } from 'react';
-import {
-  Animated,
-  Pressable,
-  StyleSheet,
-  Text,
-  type ImageSourcePropType,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  type SharedValue,
+} from 'react-native-reanimated';
 
 import type {
   AnimatedEmployeeId,
+  EmployeeActivity,
   EmployeePose,
   Facing,
 } from '../office/officeBehaviorModel';
+import type { ActorPosition } from '../office/officeMotionAnimation';
 import type { OfficeEmployee } from '../office/officeSceneModel';
+import { getEmployeePoseFrames } from '../office/employeeSpriteSources';
+import {
+  EMPLOYEE_WORLD_ASPECT_RATIO,
+  EMPLOYEE_WORLD_WIDTH_RATIO,
+} from '../office/officeSeatModel';
 import type { AppPalette } from '../theme/palette';
+import { EmployeeStatusIcon, employeeStatusLabels } from './EmployeeStatusIcon';
 
 type AnimatedEmployeeActorProps = {
-  bob: Animated.Value;
+  bob: SharedValue<number>;
   depth: number;
   employee: OfficeEmployee;
   facing: Facing;
+  gait: SharedValue<number>;
   onPress: () => void;
   palette: AppPalette;
   pose: EmployeePose;
-  position: Animated.ValueXY;
-  status: string;
-};
-
-const poseSources: Record<
-  AnimatedEmployeeId,
-  Record<EmployeePose, ImageSourcePropType>
-> = {
-  strategy: {
-    handoff: require('../assets/office/employee-strategy.png'),
-    seatedIdle: require('../assets/office/employee-strategy-workstation.png'),
-    seatedReviewing: require('../assets/office/employee-strategy-workstation.png'),
-    walkEmpty: require('../assets/office/employee-strategy-walk-empty.png'),
-    walkWithFolder: require('../assets/office/employee-strategy-walk.png'),
-  },
-  reviewer: {
-    handoff: require('../assets/office/employee-reviewer.png'),
-    seatedIdle: require('../assets/office/employee-reviewer-workstation-idle.png'),
-    seatedReviewing: require('../assets/office/employee-reviewer-workstation-review.png'),
-    walkEmpty: require('../assets/office/employee-reviewer-walk-empty.png'),
-    walkWithFolder: require('../assets/office/employee-reviewer-walk.png'),
-  },
-};
-
-const baseFacing: Record<AnimatedEmployeeId, Facing> = {
-  reviewer: 'left',
-  strategy: 'right',
+  position: ActorPosition;
+  sceneWidth: number;
+  status: EmployeeActivity;
+  statusDetail: string;
 };
 
 const poseAnchors: Record<EmployeePose, { x: number; y: number }> = {
-  handoff: { x: 0.5, y: 0.9 },
-  seatedIdle: { x: 0.5, y: 0.53 },
-  seatedReviewing: { x: 0.5, y: 0.53 },
-  walkEmpty: { x: 0.5, y: 0.9 },
-  walkWithFolder: { x: 0.5, y: 0.9 },
+  handoff: { x: 0.5, y: 0.92 },
+  risingEmpty: { x: 0.5, y: 0.92 },
+  risingWithFolder: { x: 0.5, y: 0.92 },
+  seatedIdle: { x: 0.5, y: 0.57 },
+  seatedReviewing: { x: 0.5, y: 0.57 },
+  standingEmpty: { x: 0.5, y: 0.92 },
+  standingWithFolder: { x: 0.5, y: 0.92 },
+  walkEmpty: { x: 0.5, y: 0.92 },
+  walkWithFolder: { x: 0.5, y: 0.92 },
 };
 
 export function AnimatedEmployeeActor({
@@ -65,57 +52,56 @@ export function AnimatedEmployeeActor({
   depth,
   employee,
   facing,
+  gait,
   onPress,
   palette,
   pose,
   position,
+  sceneWidth,
   status,
+  statusDetail,
 }: AnimatedEmployeeActorProps) {
   const employeeId = employee.id as AnimatedEmployeeId;
-  const poseOpacity = useRef(new Animated.Value(1)).current;
-  const mirror = baseFacing[employeeId] === facing ? 1 : -1;
-  const actorSize = actorSizes[employeeId];
+  const frames = getEmployeePoseFrames(employeeId, pose, facing);
+  const isWalking = pose === 'walkEmpty' || pose === 'walkWithFolder';
+  const actorWidth = sceneWidth * EMPLOYEE_WORLD_WIDTH_RATIO;
+  const actorHeight = actorWidth * EMPLOYEE_WORLD_ASPECT_RATIO;
   const spriteAnchor = poseAnchors[pose];
-
-  useEffect(() => {
-    poseOpacity.setValue(0.25);
-    const transition = Animated.timing(poseOpacity, {
-      duration: 160,
-      toValue: 1,
-      useNativeDriver: true,
-    });
-    transition.start();
-
-    return () => transition.stop();
-  }, [pose, poseOpacity]);
+  const positionStyle = useAnimatedStyle(
+    () => ({
+      transform: [
+        { translateX: position.x.value - actorWidth * spriteAnchor.x },
+        { translateY: position.y.value - actorHeight * spriteAnchor.y },
+      ],
+    }),
+    [actorHeight, actorWidth, spriteAnchor.x, spriteAnchor.y],
+  );
+  const firstFrameStyle = useAnimatedStyle(
+    () => ({
+      opacity: !isWalking || gait.value < 0.5 ? 1 : 0,
+      transform: [{ translateY: bob.value }, { scaleX: frames.mirror }],
+    }),
+    [frames.mirror, isWalking],
+  );
+  const secondFrameStyle = useAnimatedStyle(
+    () => ({
+      opacity: gait.value < 0.5 ? 0 : 1,
+      transform: [{ translateY: bob.value }, { scaleX: frames.mirror }],
+    }),
+    [frames.mirror],
+  );
 
   return (
     <Animated.View
       pointerEvents="box-none"
       style={[
         styles.actor,
-        actorSize,
-        {
-          transform: [
-            {
-              translateX: Animated.subtract(
-                position.x,
-                actorSize.width * spriteAnchor.x,
-              ),
-            },
-            {
-              translateY: Animated.subtract(
-                position.y,
-                actorSize.height * spriteAnchor.y,
-              ),
-            },
-          ],
-          zIndex: depth,
-        },
+        { height: actorHeight, width: actorWidth, zIndex: depth },
+        positionStyle,
       ]}
     >
       <Pressable
-        accessibilityLabel={`${employee.name}，${employee.role}，${status}`}
+        accessibilityLabel={`${employee.name}，${employee.role}，${employeeStatusLabels[status]}，${statusDetail}`}
         accessibilityRole="button"
         onPress={onPress}
         style={({ pressed }) => [
@@ -123,7 +109,7 @@ export function AnimatedEmployeeActor({
           pressed ? styles.pressed : undefined,
         ]}
       >
-        <Animated.View
+        <View
           pointerEvents="none"
           style={[
             styles.actorLabel,
@@ -133,45 +119,30 @@ export function AnimatedEmployeeActor({
             },
           ]}
         >
+          <EmployeeStatusIcon kind={status} palette={palette} size={14} />
           <Text
             numberOfLines={1}
             style={[styles.actorName, { color: palette.primaryText }]}
           >
             {employee.name}
           </Text>
-          <Text
-            numberOfLines={1}
-            style={[styles.actorStatus, { color: palette.accent }]}
-          >
-            {status}
-          </Text>
-        </Animated.View>
+        </View>
         <Animated.Image
           resizeMode="contain"
-          source={poseSources[employeeId][pose]}
-          style={[
-            styles.actorImage,
-            {
-              opacity: poseOpacity,
-              transform: [{ translateY: bob }, { scaleX: mirror }],
-            },
-          ]}
+          source={frames.first}
+          style={[styles.actorImage, firstFrameStyle]}
         />
+        {isWalking && frames.second ? (
+          <Animated.Image
+            resizeMode="contain"
+            source={frames.second}
+            style={[styles.actorImage, secondFrameStyle]}
+          />
+        ) : undefined}
       </Pressable>
     </Animated.View>
   );
 }
-
-const actorSizes = StyleSheet.create({
-  reviewer: {
-    height: 150,
-    width: 94,
-  },
-  strategy: {
-    height: 154,
-    width: 102,
-  },
-});
 
 const styles = StyleSheet.create({
   actor: {
@@ -187,31 +158,26 @@ const styles = StyleSheet.create({
   },
   actorImage: {
     height: '100%',
+    left: 0,
+    position: 'absolute',
+    top: 0,
     width: '100%',
   },
   actorLabel: {
     alignItems: 'center',
-    borderRadius: 9,
+    borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    left: -2,
-    paddingHorizontal: 7,
-    paddingVertical: 4,
+    gap: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 3,
     position: 'absolute',
-    right: -2,
-    top: -12,
+    top: -10,
     zIndex: 2,
   },
   actorName: {
-    flexShrink: 0,
-    fontSize: 10,
-    fontWeight: '800',
-    marginRight: 4,
-  },
-  actorStatus: {
-    flex: 1,
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   pressed: {
     opacity: 0.72,

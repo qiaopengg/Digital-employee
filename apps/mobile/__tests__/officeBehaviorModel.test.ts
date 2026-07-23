@@ -4,9 +4,12 @@ import {
   HANDOFF_TOTAL_DURATION,
 } from '../src/office/officeBehaviorModel';
 import {
+  getMovementFacing,
+  getStrideCount,
+} from '../src/office/officeMotionModel';
+import {
+  OFFICE_ANCHORS,
   OFFICE_SEAT_CONSTRAINTS,
-  REVIEWER_APPROACH_PATH,
-  REVIEWER_RETURN_PATH,
   STRATEGY_OUTBOUND_PATH,
   STRATEGY_RETURN_PATH,
   assertActorsDoNotOverlap,
@@ -14,12 +17,78 @@ import {
   getPathCollisions,
   normalizedPointToPixels,
 } from '../src/office/officePhysicsModel';
+import {
+  EMPLOYEE_WORLD_ASPECT_RATIO,
+  EMPLOYEE_WORLD_WIDTH_RATIO,
+  OFFICE_SEAT_RIGS,
+  isSeatBoundPose,
+} from '../src/office/officeSeatModel';
 
 test('keeps document ownership consistent across the handoff', () => {
+  expect(HANDOFF_FRAMES.strategyWalking.documentOwner).toBe('strategy');
   expect(HANDOFF_FRAMES.strategyWalking.strategy.pose).toBe('walkWithFolder');
-  expect(HANDOFF_FRAMES.returning.strategy.pose).toBe('walkEmpty');
-  expect(HANDOFF_FRAMES.returning.reviewer.pose).toBe('walkWithFolder');
+  expect(HANDOFF_FRAMES.handoff.documentOwner).toBe('transfer');
+  expect(HANDOFF_FRAMES.reviewerSeating.documentOwner).toBe('reviewer');
+  expect(HANDOFF_FRAMES.strategyReturning.strategy.pose).toBe('walkEmpty');
+  expect(HANDOFF_FRAMES.strategyReturning.reviewer.pose).toBe(
+    'seatedReviewing',
+  );
   expect(HANDOFF_FRAMES.reviewing.reviewer.pose).toBe('seatedReviewing');
+});
+
+test('walks to the reviewer workstation and faces every return segment', () => {
+  expect(STRATEGY_OUTBOUND_PATH[0]).toBe(OFFICE_ANCHORS.strategyStand);
+  expect(STRATEGY_OUTBOUND_PATH.at(-1)).toBe(OFFICE_ANCHORS.reviewerVisitor);
+  expect(OFFICE_ANCHORS.strategyStand.y).toBeGreaterThan(
+    OFFICE_ANCHORS.strategySeat.y,
+  );
+  expect(OFFICE_ANCHORS.reviewerStand.y).toBeGreaterThan(
+    OFFICE_ANCHORS.reviewerSeat.y,
+  );
+  expect(
+    STRATEGY_RETURN_PATH.slice(1).map((point, index) =>
+      getMovementFacing(STRATEGY_RETURN_PATH[index], point),
+    ),
+  ).toEqual(['south', 'west', 'north']);
+  expect(HANDOFF_FRAMES.strategyTurningHome.strategy.facing).toBe('south');
+  expect(HANDOFF_FRAMES.strategySeating.strategy.facing).toBe('north');
+});
+
+test('uses a layered seat transition before either employee enters a route', () => {
+  expect(HANDOFF_FRAMES.strategyStanding.strategy.pose).toBe(
+    'risingWithFolder',
+  );
+  expect(HANDOFF_FRAMES.reviewerStanding.reviewer.pose).toBe('risingEmpty');
+  expect(HANDOFF_FRAMES.strategySeating.strategy.pose).toBe('risingEmpty');
+  expect(HANDOFF_FRAMES.reviewerSeating.reviewer.pose).toBe('risingWithFolder');
+  expect(isSeatBoundPose('risingWithFolder')).toBe(true);
+  expect(OFFICE_SEAT_RIGS.strategy.facing).toBe('north');
+});
+
+test('keeps one world scale across seated, rising, and walking sprites', () => {
+  expect(EMPLOYEE_WORLD_WIDTH_RATIO).toBe(0.105);
+  expect(EMPLOYEE_WORLD_ASPECT_RATIO).toBe(1.5);
+});
+
+test('shows dialogue only during a real work exchange', () => {
+  const phasesWithDialogue = Object.entries(HANDOFF_FRAMES)
+    .filter(([, frame]) => frame.bubble)
+    .map(([phase]) => phase);
+
+  expect(phasesWithDialogue).toEqual(['conversation', 'handoff']);
+});
+
+test('derives cardinal facing from path geometry', () => {
+  expect(getMovementFacing({ x: 0, y: 0 }, { x: 1, y: 0 })).toBe('east');
+  expect(getMovementFacing({ x: 1, y: 0 }, { x: 0, y: 0 })).toBe('west');
+  expect(getMovementFacing({ x: 0, y: 1 }, { x: 0, y: 0 })).toBe('north');
+  expect(getMovementFacing({ x: 0, y: 0 }, { x: 0, y: 1 })).toBe('south');
+});
+
+test('ties visible foot alternation to movement duration', () => {
+  expect(getStrideCount(120)).toBe(1);
+  expect(getStrideCount(520)).toBe(2);
+  expect(getStrideCount(1040)).toBe(4);
 });
 
 test('allocates walking time by path distance', () => {
@@ -42,12 +111,9 @@ test('finishes the visible flow inside the five-second product limit', () => {
 });
 
 test('keeps every employee route outside furniture collision bodies', () => {
-  [
-    STRATEGY_OUTBOUND_PATH,
-    STRATEGY_RETURN_PATH,
-    REVIEWER_APPROACH_PATH,
-    REVIEWER_RETURN_PATH,
-  ].forEach(path => expect(getPathCollisions(path)).toEqual([]));
+  [STRATEGY_OUTBOUND_PATH, STRATEGY_RETURN_PATH].forEach(path =>
+    expect(getPathCollisions(path)).toEqual([]),
+  );
 });
 
 test('rejects a route that crosses the strategy workstation', () => {

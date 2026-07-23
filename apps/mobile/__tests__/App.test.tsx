@@ -27,12 +27,20 @@ test('renders the office home by default', async () => {
   const output = JSON.stringify(renderer.toJSON());
 
   expect(output).toContain('标准公司楼层');
-  expect(output).toContain('林策正在工位整理结构稿');
+  expect(output).toContain('新品发布方案');
+  expect(output).toContain('预留工位 A');
   expect(output).toContain('休息中');
+  expect(output).not.toContain('林策：结构和风险项已标注');
 });
 
 test('opens the accessible scene equivalent list and returns', async () => {
   const renderer = await renderApp();
+
+  await ReactTestRenderer.act(() => {
+    renderer.root
+      .findByProps({ accessibilityLabel: '打开秘书工作台' })
+      .props.onPress();
+  });
 
   await ReactTestRenderer.act(() => {
     renderer.root
@@ -48,7 +56,7 @@ test('opens the accessible scene equivalent list and returns', async () => {
       .props.onPress();
   });
 
-  expect(JSON.stringify(renderer.toJSON())).toContain('林策正在工位整理结构稿');
+  expect(JSON.stringify(renderer.toJSON())).toContain('新品发布方案');
 });
 
 test('opens employee and asset interaction sheets', async () => {
@@ -96,7 +104,7 @@ test('queues the visible employee handoff animation', async () => {
 
   await ReactTestRenderer.act(() => {
     renderer.root
-      .findByProps({ accessibilityLabel: '查看员工交接对话' })
+      .findByProps({ accessibilityLabel: '查看交接任务' })
       .props.onPress();
   });
 
@@ -107,7 +115,7 @@ test('queues the visible employee handoff animation', async () => {
   });
 
   const output = JSON.stringify(renderer.toJSON());
-  expect(output).toContain('林策正在工位整理结构稿');
+  expect(output).toContain('新品发布方案');
   expect(output).not.toContain('真实交接事件');
 });
 
@@ -116,7 +124,13 @@ test('switches between top-level sections', async () => {
 
   await ReactTestRenderer.act(() => {
     renderer.root
-      .findByProps({ accessibilityLabel: '任务标签' })
+      .findByProps({ accessibilityLabel: '打开秘书工作台' })
+      .props.onPress();
+  });
+
+  await ReactTestRenderer.act(() => {
+    renderer.root
+      .findByProps({ accessibilityLabel: '打开任务' })
       .props.onPress();
   });
 
