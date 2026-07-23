@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Image,
   ImageBackground,
   Pressable,
   StyleSheet,
@@ -19,10 +18,9 @@ import {
 import { isSeatBoundPose } from '../office/officeSeatModel';
 import type { AppPalette } from '../theme/palette';
 import { AnimatedEmployeeActor } from './AnimatedEmployeeActor';
-import { OfficeCapacityLayer } from './OfficeCapacityLayer';
 import { OfficeSceneStatusLayer } from './OfficeSceneStatusLayer';
 import { OfficeSeatForegroundLayer } from './OfficeSeatForegroundLayer';
-import { OfficeWorkstationScreens } from './OfficeWorkstationScreens';
+import { OfficeWorkstationHotspots } from './OfficeWorkstationHotspots';
 import { StaticEmployeeActor } from './StaticEmployeeActor';
 
 type InteractiveOfficeSceneProps = {
@@ -36,8 +34,7 @@ type InteractiveOfficeSceneProps = {
   palette: AppPalette;
 };
 
-const officeFloor = require('../assets/office/office-floor-v2.png');
-const coffeeMachine = require('../assets/office/asset-coffee-machine.png');
+const officeFloor = require('../assets/office/office-floor-v3.png');
 
 export function InteractiveOfficeScene({
   assetMode,
@@ -82,8 +79,7 @@ export function InteractiveOfficeScene({
       source={officeFloor}
       style={styles.scene}
     >
-      <OfficeCapacityLayer />
-      <OfficeWorkstationScreens />
+      <OfficeWorkstationHotspots />
 
       <Pressable
         accessibilityLabel="查看咖啡机资产"
@@ -91,27 +87,17 @@ export function InteractiveOfficeScene({
         onPress={onSelectAsset}
         style={({ pressed }) => [
           styles.assetTarget,
-          { borderColor: palette.secretary },
-          assetMode === 'moved' ? styles.assetMoved : undefined,
-          assetMode === 'sold' ? styles.assetSold : undefined,
           pressed ? styles.pressedActor : undefined,
         ]}
       >
-        {assetMode === 'sold' ? undefined : (
-          <Image
-            resizeMode="contain"
-            source={coffeeMachine}
-            style={styles.assetImage}
-          />
-        )}
         <View style={[styles.assetBadge, { backgroundColor: palette.card }]}>
           <Text style={[styles.assetBadgeText, { color: palette.secretary }]}>
             {assetMode === 'maintenance'
-              ? '维护中'
+              ? '维护'
               : assetMode === 'moved'
-              ? '新槽位'
+              ? '迁移'
               : assetMode === 'sold'
-              ? '空闲槽位'
+              ? '已售'
               : '资产'}
           </Text>
         </View>
@@ -193,32 +179,21 @@ const styles = StyleSheet.create({
   },
   assetTarget: {
     alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 2,
-    height: 66,
+    height: '14%',
     justifyContent: 'center',
-    left: '44%',
     position: 'absolute',
-    top: '5%',
-    width: 58,
+    right: 0,
+    top: '62%',
+    width: '11%',
     zIndex: 8,
-  },
-  assetImage: {
-    height: 58,
-    width: 58,
-  },
-  assetMoved: {
-    left: '37%',
-  },
-  assetSold: {
-    borderStyle: 'dashed',
   },
   assetBadge: {
     borderRadius: 7,
-    bottom: -10,
+    left: -7,
     paddingHorizontal: 6,
     paddingVertical: 2,
     position: 'absolute',
+    top: 7,
   },
   assetBadgeText: {
     fontSize: 9,

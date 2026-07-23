@@ -66,7 +66,12 @@ export function EmployeeStatusIcon({
         },
       ]}
     >
-      <Text style={[styles.glyph, { color, fontSize: size * 0.64 }]}>
+      <Text
+        style={[
+          styles.glyph,
+          { color, fontSize: size * 0.64, lineHeight: size },
+        ]}
+      >
         {statusGlyphs[kind]}
       </Text>
     </View>
@@ -81,7 +86,6 @@ const styles = StyleSheet.create({
   },
   glyph: {
     fontWeight: '900',
-    lineHeight: 12,
     marginTop: -1,
     textAlign: 'center',
   },

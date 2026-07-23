@@ -4,6 +4,11 @@ import {
   HANDOFF_TOTAL_DURATION,
 } from '../src/office/officeBehaviorModel';
 import {
+  OFFICE_FLOW_ORDER,
+  OFFICE_FUNCTIONAL_ZONES,
+  OFFICE_WORKSTATIONS,
+} from '../src/office/officeLayoutModel';
+import {
   getMovementFacing,
   getStrideCount,
 } from '../src/office/officeMotionModel';
@@ -18,8 +23,10 @@ import {
   normalizedPointToPixels,
 } from '../src/office/officePhysicsModel';
 import {
+  EMPLOYEE_NEAR_FIELD_WIDTH_RATIO,
   EMPLOYEE_WORLD_ASPECT_RATIO,
   EMPLOYEE_WORLD_WIDTH_RATIO,
+  OFFICE_EMPLOYEE_SPRITE_ANCHORS,
   OFFICE_SEAT_RIGS,
   isSeatBoundPose,
 } from '../src/office/officeSeatModel';
@@ -66,8 +73,53 @@ test('uses a layered seat transition before either employee enters a route', () 
 });
 
 test('keeps one world scale across seated, rising, and walking sprites', () => {
-  expect(EMPLOYEE_WORLD_WIDTH_RATIO).toBe(0.105);
+  expect(EMPLOYEE_WORLD_WIDTH_RATIO).toBe(0.11);
+  expect(EMPLOYEE_NEAR_FIELD_WIDTH_RATIO).toBe(0.118);
+  expect(EMPLOYEE_NEAR_FIELD_WIDTH_RATIO).toBeGreaterThan(
+    EMPLOYEE_WORLD_WIDTH_RATIO,
+  );
   expect(EMPLOYEE_WORLD_ASPECT_RATIO).toBe(1.5);
+  expect(OFFICE_EMPLOYEE_SPRITE_ANCHORS.seatedIdle.y).toBe(0.84);
+  expect(OFFICE_EMPLOYEE_SPRITE_ANCHORS.seatedReviewing.y).toBe(0.84);
+  expect(OFFICE_EMPLOYEE_SPRITE_ANCHORS.walkEmpty.y).toBe(0.92);
+});
+
+test('models six equal-purpose workstations as an ordered two-by-three grid', () => {
+  expect(OFFICE_WORKSTATIONS).toHaveLength(6);
+  expect(
+    OFFICE_WORKSTATIONS.map(({ gridColumn, gridRow }) => [
+      gridColumn,
+      gridRow,
+    ]),
+  ).toEqual([
+    [0, 0],
+    [1, 0],
+    [0, 1],
+    [1, 1],
+    [0, 2],
+    [1, 2],
+  ]);
+  expect(
+    OFFICE_WORKSTATIONS.filter(workstation => !workstation.occupiedBy),
+  ).toHaveLength(4);
+  expect(
+    OFFICE_WORKSTATIONS[1].seat.x - OFFICE_WORKSTATIONS[0].seat.x,
+  ).toBeCloseTo(0.19, 3);
+});
+
+test('keeps intake and reporting flows ordered around the main corridor', () => {
+  expect(OFFICE_FLOW_ORDER.taskIntake).toEqual([
+    'entrance',
+    'reception',
+    'mainCorridor',
+    'openOffice',
+  ]);
+  expect(OFFICE_FLOW_ORDER.reportToBoss).toEqual([
+    'openOffice',
+    'mainCorridor',
+    'bossOffice',
+  ]);
+  expect(OFFICE_FUNCTIONAL_ZONES.mainCorridor.x).toBeGreaterThanOrEqual(0.48);
 });
 
 test('shows dialogue only during a real work exchange', () => {
@@ -119,8 +171,8 @@ test('keeps every employee route outside furniture collision bodies', () => {
 test('rejects a route that crosses the strategy workstation', () => {
   expect(
     getPathCollisions([
-      { x: 0.1, y: 0.5 },
-      { x: 0.5, y: 0.5 },
+      { x: 0.05, y: 0.17 },
+      { x: 0.35, y: 0.17 },
     ]),
   ).toContain('workstation-strategy');
 });
@@ -144,10 +196,16 @@ test('binds working and resting poses to furniture-facing constraints', () => {
     facing: 'north',
     interaction: 'computer',
   });
+  expect(OFFICE_SEAT_CONSTRAINTS.secretaryReception).toMatchObject({
+    anchorId: 'secretarySeat',
+    facing: 'north',
+    interaction: 'computer',
+  });
   expect(OFFICE_SEAT_CONSTRAINTS.sofaLeft).toMatchObject({
     facing: 'east',
     interaction: 'rest',
   });
+  expect(OFFICE_ANCHORS.secretarySeat).toEqual({ x: 0.145, y: 0.745 });
 });
 
 test('maps semantic scene points to the rendered office size', () => {

@@ -1,5 +1,6 @@
 import { Image, StyleSheet, View } from 'react-native';
 
+import { OFFICE_ANCHORS } from '../office/officePhysicsModel';
 import { OFFICE_SEAT_FOREGROUND_DEPTH } from '../office/officeSeatModel';
 
 type SceneSize = Readonly<{ height: number; width: number }>;
@@ -12,19 +13,22 @@ type OccluderRect = Readonly<{
   y: number;
 }>;
 
-const officeFloor = require('../assets/office/office-floor-v2.png');
-const REVIEWER_OFFSET_X = 0.372;
+const officeFloor = require('../assets/office/office-floor-v3.png');
+const REVIEWER_OFFSET_X =
+  OFFICE_ANCHORS.reviewerSeat.x - OFFICE_ANCHORS.strategySeat.x;
+const SECRETARY_OFFSET = {
+  x: OFFICE_ANCHORS.secretarySeat.x - OFFICE_ANCHORS.strategySeat.x,
+  y: OFFICE_ANCHORS.secretarySeat.y - OFFICE_ANCHORS.strategySeat.y,
+};
 
 const strategyOccluders: ReadonlyArray<OccluderRect> = [
-  { height: 0.008, id: 'desk-edge', width: 0.219, x: 0.193, y: 0.522 },
-  { height: 0.052, id: 'left-arm', width: 0.017, x: 0.251, y: 0.519 },
-  { height: 0.052, id: 'right-arm', width: 0.017, x: 0.326, y: 0.519 },
-  { height: 0.009, id: 'seat-front', width: 0.07, x: 0.263, y: 0.56 },
-  { height: 0.045, id: 'center-post', width: 0.012, x: 0.296, y: 0.562 },
-  { height: 0.012, id: 'caster-cross', width: 0.068, x: 0.264, y: 0.57 },
-  { height: 0.023, id: 'left-caster', width: 0.02, x: 0.254, y: 0.568 },
-  { height: 0.023, id: 'right-caster', width: 0.02, x: 0.327, y: 0.568 },
-  { height: 0.016, id: 'center-caster', width: 0.018, x: 0.292, y: 0.596 },
+  { height: 0.042, id: 'left-arm', width: 0.013, x: 0.145, y: 0.207 },
+  { height: 0.042, id: 'right-arm', width: 0.013, x: 0.216, y: 0.207 },
+  { height: 0.012, id: 'seat-front', width: 0.07, x: 0.145, y: 0.244 },
+  { height: 0.047, id: 'center-post', width: 0.012, x: 0.179, y: 0.247 },
+  { height: 0.014, id: 'caster-cross', width: 0.072, x: 0.144, y: 0.271 },
+  { height: 0.023, id: 'left-caster', width: 0.018, x: 0.139, y: 0.264 },
+  { height: 0.023, id: 'right-caster', width: 0.018, x: 0.214, y: 0.264 },
 ];
 
 const seatOccluders = [
@@ -33,6 +37,12 @@ const seatOccluders = [
     ...rect,
     id: `reviewer-${rect.id}`,
     x: rect.x + REVIEWER_OFFSET_X,
+  })),
+  ...strategyOccluders.map(rect => ({
+    ...rect,
+    id: `secretary-${rect.id}`,
+    x: rect.x + SECRETARY_OFFSET.x,
+    y: rect.y + SECRETARY_OFFSET.y,
   })),
 ] as const;
 

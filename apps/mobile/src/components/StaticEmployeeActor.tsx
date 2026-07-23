@@ -1,10 +1,14 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import {
   OFFICE_ANCHORS,
   getAnchoredTopLeft,
 } from '../office/officePhysicsModel';
 import type { OfficeEmployee } from '../office/officeSceneModel';
+import {
+  EMPLOYEE_NEAR_FIELD_WIDTH_RATIO,
+  OFFICE_EMPLOYEE_SPRITE_ANCHORS,
+} from '../office/officeSeatModel';
 import type { AppPalette } from '../theme/palette';
 import { EmployeeStatusIcon } from './EmployeeStatusIcon';
 
@@ -17,22 +21,24 @@ type StaticEmployeeActorProps = {
 
 const actorConfigs = {
   secretary: {
-    anchorId: 'secretaryStanding' as const,
-    depth: 36,
+    anchorId: 'secretarySeat' as const,
+    depth: 54,
     fallbackWidth: 42,
     heightRatio: 1.5,
-    spriteAnchor: { x: 0.5, y: 0.92 },
-    widthRatio: 0.105,
+    spriteAnchor: OFFICE_EMPLOYEE_SPRITE_ANCHORS.seatedIdle,
+    widthRatio: EMPLOYEE_NEAR_FIELD_WIDTH_RATIO,
   },
   break: {
     anchorId: 'sofaSeat' as const,
     depth: 82,
-    fallbackWidth: 48,
+    fallbackWidth: 42,
     heightRatio: 1.5,
     spriteAnchor: { x: 0.5, y: 0.46 },
-    widthRatio: 0.12,
+    widthRatio: EMPLOYEE_NEAR_FIELD_WIDTH_RATIO,
   },
 };
+
+const secretarySeatSprite = require('../assets/office/employee-secretary-seated-rig-v4.png');
 
 export function StaticEmployeeActor({
   employee,
@@ -90,18 +96,14 @@ export function StaticEmployeeActor({
         <EmployeeStatusIcon
           kind={employee.id === 'break' ? 'break' : 'available'}
           palette={palette}
-          size={14}
+          size={10}
         />
-        <Text
-          numberOfLines={1}
-          style={[styles.actorName, { color: palette.primaryText }]}
-        >
-          {employee.name}
-        </Text>
       </View>
       <Image
         resizeMode="contain"
-        source={employee.image}
+        source={
+          employee.id === 'secretary' ? secretarySeatSprite : employee.image
+        }
         style={styles.actorImage}
       />
     </Pressable>
@@ -109,8 +111,8 @@ export function StaticEmployeeActor({
 }
 
 const fallbackPositions = StyleSheet.create({
-  secretary: { right: '7%', top: '20%' },
-  break: { bottom: '1%', left: '1%' },
+  secretary: { bottom: '24%', left: '13%' },
+  break: { bottom: '22%', right: '18%' },
 });
 
 const styles = StyleSheet.create({
@@ -127,17 +129,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 9,
     borderWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 3,
+    padding: 2,
     position: 'absolute',
+    right: -6,
     top: -12,
     zIndex: 2,
-  },
-  actorName: {
-    fontSize: 9,
-    fontWeight: '800',
   },
   pressed: {
     opacity: 0.72,

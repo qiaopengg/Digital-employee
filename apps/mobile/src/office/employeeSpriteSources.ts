@@ -15,12 +15,12 @@ const seatedSources: Record<
   { idle: ImageSourcePropType; reviewing: ImageSourcePropType }
 > = {
   strategy: {
-    idle: require('../assets/office/employee-strategy-seated-rig-v3.png'),
-    reviewing: require('../assets/office/employee-strategy-seated-rig-v3.png'),
+    idle: require('../assets/office/employee-strategy-seated-rig-v4.png'),
+    reviewing: require('../assets/office/employee-strategy-seated-rig-v4.png'),
   },
   reviewer: {
-    idle: require('../assets/office/employee-reviewer-seated-idle-rig-v3.png'),
-    reviewing: require('../assets/office/employee-reviewer-seated-review-rig-v3.png'),
+    idle: require('../assets/office/employee-reviewer-seated-idle-rig-v4.png'),
+    reviewing: require('../assets/office/employee-reviewer-seated-review-rig-v4.png'),
   },
 };
 

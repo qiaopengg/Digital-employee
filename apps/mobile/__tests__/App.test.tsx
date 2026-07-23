@@ -26,7 +26,7 @@ test('renders the office home by default', async () => {
   const renderer = await renderApp();
   const output = JSON.stringify(renderer.toJSON());
 
-  expect(output).toContain('标准公司楼层');
+  expect(output).toContain('老板办公室，当前空闲');
   expect(output).toContain('新品发布方案');
   expect(output).toContain('预留工位 A');
   expect(output).toContain('休息中');

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   type SharedValue,
@@ -16,6 +16,7 @@ import { getEmployeePoseFrames } from '../office/employeeSpriteSources';
 import {
   EMPLOYEE_WORLD_ASPECT_RATIO,
   EMPLOYEE_WORLD_WIDTH_RATIO,
+  OFFICE_EMPLOYEE_SPRITE_ANCHORS,
 } from '../office/officeSeatModel';
 import type { AppPalette } from '../theme/palette';
 import { EmployeeStatusIcon, employeeStatusLabels } from './EmployeeStatusIcon';
@@ -33,18 +34,6 @@ type AnimatedEmployeeActorProps = {
   sceneWidth: number;
   status: EmployeeActivity;
   statusDetail: string;
-};
-
-const poseAnchors: Record<EmployeePose, { x: number; y: number }> = {
-  handoff: { x: 0.5, y: 0.92 },
-  risingEmpty: { x: 0.5, y: 0.92 },
-  risingWithFolder: { x: 0.5, y: 0.92 },
-  seatedIdle: { x: 0.5, y: 0.57 },
-  seatedReviewing: { x: 0.5, y: 0.57 },
-  standingEmpty: { x: 0.5, y: 0.92 },
-  standingWithFolder: { x: 0.5, y: 0.92 },
-  walkEmpty: { x: 0.5, y: 0.92 },
-  walkWithFolder: { x: 0.5, y: 0.92 },
 };
 
 export function AnimatedEmployeeActor({
@@ -66,7 +55,7 @@ export function AnimatedEmployeeActor({
   const isWalking = pose === 'walkEmpty' || pose === 'walkWithFolder';
   const actorWidth = sceneWidth * EMPLOYEE_WORLD_WIDTH_RATIO;
   const actorHeight = actorWidth * EMPLOYEE_WORLD_ASPECT_RATIO;
-  const spriteAnchor = poseAnchors[pose];
+  const spriteAnchor = OFFICE_EMPLOYEE_SPRITE_ANCHORS[pose];
   const positionStyle = useAnimatedStyle(
     () => ({
       transform: [
@@ -119,13 +108,7 @@ export function AnimatedEmployeeActor({
             },
           ]}
         >
-          <EmployeeStatusIcon kind={status} palette={palette} size={14} />
-          <Text
-            numberOfLines={1}
-            style={[styles.actorName, { color: palette.primaryText }]}
-          >
-            {employee.name}
-          </Text>
+          <EmployeeStatusIcon kind={status} palette={palette} size={8} />
         </View>
         <Animated.Image
           resizeMode="contain"
@@ -167,17 +150,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 3,
+    padding: 1,
     position: 'absolute',
-    top: -10,
+    right: -8,
+    top: '28%',
     zIndex: 2,
-  },
-  actorName: {
-    fontSize: 9,
-    fontWeight: '800',
   },
   pressed: {
     opacity: 0.72,

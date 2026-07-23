@@ -1,3 +1,8 @@
+import {
+  OFFICE_FUNCTIONAL_ZONES,
+  OFFICE_WORKSTATIONS,
+} from './officeLayoutModel';
+
 export type NormalizedPoint = Readonly<{
   x: number;
   y: number;
@@ -17,7 +22,7 @@ export type OfficeAnchorId =
   | 'reviewerVisitor'
   | 'reviewerSeat'
   | 'reviewerStand'
-  | 'secretaryStanding'
+  | 'secretarySeat'
   | 'sofaSeat';
 
 export type OfficeFacing = 'east' | 'north' | 'south' | 'west';
@@ -33,20 +38,28 @@ export type OfficeCollider = Readonly<{
   rect: NormalizedRect;
 }>;
 
+const strategyWorkstation = OFFICE_WORKSTATIONS[0];
+const reviewerWorkstation = OFFICE_WORKSTATIONS[1];
+
 export const OFFICE_ANCHORS: Record<OfficeAnchorId, NormalizedPoint> = {
-  strategySeat: { x: 0.298, y: 0.552 },
-  strategyStand: { x: 0.298, y: 0.585 },
-  strategyEgress: { x: 0.298, y: 0.625 },
-  reviewerVisitor: { x: 0.54, y: 0.585 },
-  reviewerSeat: { x: 0.668, y: 0.552 },
-  reviewerStand: { x: 0.668, y: 0.585 },
-  secretaryStanding: { x: 0.84, y: 0.36 },
-  sofaSeat: { x: 0.15, y: 0.82 },
+  strategySeat: strategyWorkstation.seat,
+  strategyStand: strategyWorkstation.stand,
+  strategyEgress: { x: strategyWorkstation.stand.x, y: 0.27 },
+  reviewerVisitor: { x: 0.515, y: reviewerWorkstation.stand.y },
+  reviewerSeat: reviewerWorkstation.seat,
+  reviewerStand: reviewerWorkstation.stand,
+  secretarySeat: { x: 0.145, y: 0.745 },
+  sofaSeat: { x: 0.75, y: 0.7 },
 };
 
 export const OFFICE_SEAT_CONSTRAINTS = {
   reviewerWorkstation: {
     anchorId: 'reviewerSeat',
+    facing: 'north',
+    interaction: 'computer',
+  },
+  secretaryReception: {
+    anchorId: 'secretarySeat',
     facing: 'north',
     interaction: 'computer',
   },
@@ -64,43 +77,38 @@ export const OFFICE_SEAT_CONSTRAINTS = {
 
 export const OFFICE_COLLIDERS: ReadonlyArray<OfficeCollider> = [
   {
-    id: 'kitchenette',
-    rect: { height: 0.14, width: 0.86, x: 0.06, y: 0 },
+    id: 'storage-wall',
+    rect: { height: 0.115, width: 0.42, x: 0.05, y: 0 },
   },
   {
     id: 'boss-office',
-    rect: { height: 0.28, width: 0.66, x: 0.16, y: 0.14 },
+    rect: OFFICE_FUNCTIONAL_ZONES.bossOffice,
   },
   {
-    id: 'workstation-strategy',
-    rect: { height: 0.06, width: 0.23, x: 0.19, y: 0.465 },
-  },
-  {
-    id: 'workstation-reviewer',
-    rect: { height: 0.06, width: 0.23, x: 0.56, y: 0.465 },
-  },
-  {
-    id: 'workstation-reserved-a',
-    rect: { height: 0.045, width: 0.16, x: 0.22, y: 0.675 },
-  },
-  {
-    id: 'workstation-reserved-b',
-    rect: { height: 0.045, width: 0.16, x: 0.42, y: 0.675 },
-  },
-  {
-    id: 'sofa',
-    rect: { height: 0.23, width: 0.2, x: 0.02, y: 0.72 },
+    id: 'secretary-reception',
+    rect: { height: 0.12, width: 0.35, x: 0.01, y: 0.64 },
   },
   {
     id: 'meeting-room',
-    rect: { height: 0.31, width: 0.39, x: 0.6, y: 0.67 },
+    rect: OFFICE_FUNCTIONAL_ZONES.meetingRoom,
   },
+  {
+    id: 'lounge-and-pantry',
+    rect: OFFICE_FUNCTIONAL_ZONES.loungeAndPantry,
+  },
+  ...OFFICE_WORKSTATIONS.map(workstation => ({
+    id: `workstation-${workstation.id}`,
+    rect: workstation.deskRect,
+  })),
 ];
 
 export const STRATEGY_OUTBOUND_PATH: ReadonlyArray<NormalizedPoint> = [
   OFFICE_ANCHORS.strategyStand,
   OFFICE_ANCHORS.strategyEgress,
-  { x: OFFICE_ANCHORS.reviewerVisitor.x, y: OFFICE_ANCHORS.strategyEgress.y },
+  {
+    x: OFFICE_ANCHORS.reviewerVisitor.x,
+    y: OFFICE_ANCHORS.strategyEgress.y,
+  },
   OFFICE_ANCHORS.reviewerVisitor,
 ];
 

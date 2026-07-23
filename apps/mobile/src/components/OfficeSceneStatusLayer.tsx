@@ -21,33 +21,16 @@ export function OfficeSceneStatusLayer({
 }: OfficeSceneStatusLayerProps) {
   return (
     <View pointerEvents="box-none" style={styles.layer}>
-      <View style={styles.sceneHeader}>
-        <View
-          style={[
-            styles.officeChip,
-            { backgroundColor: palette.card, borderColor: palette.separator },
-          ]}
-        >
-          <Text style={[styles.officeChipText, { color: palette.primaryText }]}>
-            标准公司楼层 · 固定镜头
-          </Text>
-        </View>
-        <View
-          style={[styles.liveChip, { backgroundColor: palette.successSoft }]}
-        >
-          <Text style={[styles.liveChipText, { color: palette.success }]}>
-            4 人在场
-          </Text>
-        </View>
-      </View>
-
       <View
         accessible
         accessibilityLabel="老板办公室，当前空闲"
         style={[styles.bossOfficeBadge, { backgroundColor: palette.card }]}
       >
+        <View
+          style={[styles.bossOfficeDot, { backgroundColor: palette.success }]}
+        />
         <Text style={[styles.bossOfficeText, { color: palette.primaryText }]}>
-          老板办公室 · 空闲
+          老板室
         </Text>
       </View>
 
@@ -65,7 +48,10 @@ export function OfficeSceneStatusLayer({
             pressed ? styles.pressed : undefined,
           ]}
         >
-          <Text style={[styles.handoffText, { color: palette.primaryText }]}>
+          <Text
+            numberOfLines={2}
+            style={[styles.handoffText, { color: palette.primaryText }]}
+          >
             {bubble}
           </Text>
         </Pressable>
@@ -122,40 +108,21 @@ const styles = StyleSheet.create({
     top: 0,
     zIndex: 30,
   },
-  sceneHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    left: 10,
-    position: 'absolute',
-    right: 10,
-    top: 10,
-  },
-  officeChip: {
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-  },
-  officeChipText: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  liveChip: {
-    borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-  },
-  liveChipText: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
   bossOfficeBadge: {
+    alignItems: 'center',
     borderRadius: 8,
-    left: '35%',
+    flexDirection: 'row',
+    gap: 4,
+    left: '73%',
     paddingHorizontal: 7,
     paddingVertical: 4,
     position: 'absolute',
-    top: '16%',
+    top: '4%',
+  },
+  bossOfficeDot: {
+    borderRadius: 3,
+    height: 6,
+    width: 6,
   },
   bossOfficeText: {
     fontSize: 8,
@@ -164,16 +131,17 @@ const styles = StyleSheet.create({
   handoffBubble: {
     borderRadius: 13,
     borderWidth: StyleSheet.hairlineWidth,
-    left: '29%',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    left: '20%',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     position: 'absolute',
-    top: '40%',
-    width: '57%',
+    top: '11%',
+    width: '46%',
   },
   handoffText: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 8.5,
+    fontWeight: '700',
+    lineHeight: 11,
   },
   taskStrip: {
     alignItems: 'center',

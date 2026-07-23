@@ -191,8 +191,8 @@ export function useHandoffBehavior({
           OFFICE_ANCHORS.reviewerStand,
           sceneSize,
         );
-        setStrategyFacing('east');
-        setReviewerFacing('west');
+        setStrategyFacing('west');
+        setReviewerFacing('east');
         setPhase('conversation');
         if (!(await delay(220))) return;
         setPhase('handoff');
@@ -230,7 +230,7 @@ export function useHandoffBehavior({
         return;
       }
 
-      setStrategyFacing('east');
+      setStrategyFacing('west');
       setPhase('reviewerStanding');
       if (
         !(await animateActorPosition(
@@ -243,7 +243,7 @@ export function useHandoffBehavior({
         return;
       }
 
-      setReviewerFacing('west');
+      setReviewerFacing('east');
       setPhase('reviewerTurning');
       if (!(await delay(HANDOFF_TIMING.reviewerTurn))) return;
 
