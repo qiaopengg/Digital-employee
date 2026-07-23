@@ -8,9 +8,16 @@ import {
   type AssetAction,
   type OfficeSelection,
 } from '../components/OfficeDetailSheet';
+import { WorkScheduleSheet } from '../components/WorkScheduleSheet';
 import type { TabKey } from '../components/BottomTabBar';
-import type { AssetMode } from '../office/officeSceneModel';
 import { OFFICE_BOTTOM_CONTROL } from '../office/officeControlLayout';
+import type { AssetMode } from '../office/officeSceneModel';
+import {
+  getTimeOfDayPeriod,
+  isWorkingHour,
+  type WorkSchedule,
+} from '../office/officeScheduleModel';
+import { useOfficeClock } from '../office/useOfficeClock';
 import type { AiTaskExecution } from '../tasks/taskTypes';
 import type { AppPalette } from '../theme/palette';
 
@@ -20,9 +27,11 @@ type OfficeWorkspaceScreenProps = {
   onNavigate: (tab: TabKey) => void;
   onOpenEquivalentList: () => void;
   onOpenTaskResult: () => void;
+  onWorkScheduleChange: (schedule: WorkSchedule) => void;
   palette: AppPalette;
   task?: AiTaskExecution;
   topInset: number;
+  workSchedule: WorkSchedule;
 };
 
 export function OfficeWorkspaceScreen({
@@ -31,10 +40,16 @@ export function OfficeWorkspaceScreen({
   onNavigate,
   onOpenEquivalentList,
   onOpenTaskResult,
+  onWorkScheduleChange,
   palette,
   task,
   topInset,
+  workSchedule,
 }: OfficeWorkspaceScreenProps) {
+  const now = useOfficeClock();
+  const workingNow = isWorkingHour(now, workSchedule);
+  const period = getTimeOfDayPeriod(now);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [selection, setSelection] = useState<OfficeSelection>();
   const [handoffComplete, setHandoffComplete] = useState(false);
   const [handoffReplayToken, setHandoffReplayToken] = useState(0);
@@ -88,23 +103,44 @@ export function OfficeWorkspaceScreen({
             4 人在场 · {handoffComplete ? '顾宁正在审核' : '1 项交接中'}
           </Text>
         </View>
-        <Pressable
-          accessibilityLabel="查看公司资产"
-          accessibilityRole="button"
-          onPress={() => setSelection({ type: 'asset' })}
-          style={({ pressed }) => [
-            styles.balance,
-            { backgroundColor: palette.card, borderColor: palette.separator },
-            pressed ? styles.pressed : undefined,
-          ]}
-        >
-          <Text style={[styles.balanceLabel, { color: palette.secondaryText }]}>
-            公司余额
-          </Text>
-          <Text style={[styles.balanceValue, { color: palette.primaryText }]}>
-            ¥ 8,420
-          </Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            accessibilityLabel="设置工作时间"
+            accessibilityRole="button"
+            onPress={() => setIsScheduleOpen(true)}
+            style={({ pressed }) => [
+              styles.clock,
+              { backgroundColor: palette.card, borderColor: palette.separator },
+              pressed ? styles.pressed : undefined,
+            ]}
+          >
+            <View style={[styles.clockFace, { borderColor: palette.accent }]}>
+              <View style={[styles.clockHourHand, { backgroundColor: palette.accent }]} />
+              <View style={[styles.clockMinuteHand, { backgroundColor: palette.accent }]} />
+            </View>
+            <View>
+              <Text style={[styles.clockTime, { color: palette.primaryText }]}>
+                {now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}
+              </Text>
+              <Text style={[styles.clockState, { color: workingNow ? palette.success : palette.secondaryText }]}>
+                {workingNow ? '工作中' : period === 'midday' ? '午休' : '非工作时间'}
+              </Text>
+            </View>
+          </Pressable>
+          <Pressable
+            accessibilityLabel="查看公司资产"
+            accessibilityRole="button"
+            onPress={() => setSelection({ type: 'asset' })}
+            style={({ pressed }) => [
+              styles.balance,
+              { backgroundColor: palette.card, borderColor: palette.separator },
+              pressed ? styles.pressed : undefined,
+            ]}
+          >
+            <Text style={[styles.balanceLabel, { color: palette.secondaryText }]}>公司余额</Text>
+            <Text style={[styles.balanceValue, { color: palette.primaryText }]}>¥ 8,420</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.sceneStage}>
@@ -155,6 +191,15 @@ export function OfficeWorkspaceScreen({
           palette={palette}
         />
       </View>
+
+      <WorkScheduleSheet
+        bottomInset={bottomInset}
+        onClose={() => setIsScheduleOpen(false)}
+        onSave={onWorkScheduleChange}
+        palette={palette}
+        schedule={workSchedule}
+        visible={isScheduleOpen}
+      />
 
       {selection ? (
         <OfficeDetailSheet

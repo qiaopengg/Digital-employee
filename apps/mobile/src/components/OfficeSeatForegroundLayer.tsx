@@ -54,12 +54,12 @@ const seatOccluders = [
     y: rect.y + SECRETARY_OFFSET.y,
   })),
   {
-    borderRadius: 12,
-    height: 0.044,
+    borderRadius: 8,
+    height: 0.018,
     id: 'sofa-front',
     width: 0.21,
     x: 0.635,
-    y: 0.704,
+    y: 0.734,
   },
 ] as const;
 

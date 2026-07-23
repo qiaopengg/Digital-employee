@@ -8,9 +8,12 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
+import { isNightPeriod } from '../office/officeLightingModel';
 import { OFFICE_ANCHORS, getAnchoredTopLeft } from '../office/officePhysicsModel';
+import { getTimeOfDayPeriod } from '../office/officeScheduleModel';
 import { useDeliveryBehavior } from '../office/useDeliveryBehavior';
 import { useHandoffBehavior } from '../office/useHandoffBehavior';
+import { useOfficeClock } from '../office/useOfficeClock';
 import {
   getOfficeEmployee,
   officeEmployees,
@@ -22,6 +25,8 @@ import type { AppPalette } from '../theme/palette';
 import type { AiTaskExecution } from '../tasks/taskTypes';
 import { AnimatedEmployeeActor } from './AnimatedEmployeeActor';
 import { DeliveryDocumentIcon } from './DeliveryDocumentIcon';
+import { DeskLampGlow } from './DeskLampGlow';
+import { OfficeLightingOverlay } from './OfficeLightingOverlay';
 import { OfficeSceneStatusLayer } from './OfficeSceneStatusLayer';
 import { OfficeSeatForegroundLayer } from './OfficeSeatForegroundLayer';
 import { OfficeWorkstationHotspots } from './OfficeWorkstationHotspots';
@@ -51,6 +56,9 @@ export function InteractiveOfficeScene({
   task,
 }: InteractiveOfficeSceneProps) {
   const [sceneSize, setSceneSize] = useState({ height: 0, width: 0 });
+  const now = useOfficeClock();
+  const timeOfDayPeriod = getTimeOfDayPeriod(now);
+  const isOvertimePeriod = isNightPeriod(timeOfDayPeriod);
   const strategyEmployee = getOfficeEmployee('strategy');
   const reviewerEmployee = getOfficeEmployee('reviewer');
   const handoffBehavior = useHandoffBehavior({
@@ -191,6 +199,19 @@ export function InteractiveOfficeScene({
         </>
       ) : undefined}
 
+      {isOvertimePeriod ? (
+        <>
+          <DeskLampGlow
+            anchor={OFFICE_ANCHORS.strategySeat}
+            sceneSize={sceneSize}
+          />
+          <DeskLampGlow
+            anchor={OFFICE_ANCHORS.reviewerSeat}
+            sceneSize={sceneSize}
+          />
+        </>
+      ) : undefined}
+
       {sceneSize.width > 0 ? (
         <DeliveryDocumentIcon
           opacity={deliveryBehavior.iconOpacity}
@@ -200,6 +221,7 @@ export function InteractiveOfficeScene({
       ) : undefined}
 
       <OfficeSeatForegroundLayer sceneSize={sceneSize} />
+      <OfficeLightingOverlay period={timeOfDayPeriod} />
 
       {isDeskReady && bossDeskPixels ? (
         <Pressable

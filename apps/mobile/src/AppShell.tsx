@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabBar, type TabKey } from './components/BottomTabBar';
 import { TaskComposerSheet } from './components/TaskComposerSheet';
 import { TaskResultSheet } from './components/TaskResultSheet';
+import { DEFAULT_WORK_SCHEDULE } from './office/officeScheduleModel';
+import type { WorkSchedule } from './office/officeScheduleModel';
 import { OfficeSummaryScreen } from './screens/OfficeSummaryScreen';
 import { OfficeWorkspaceScreen } from './screens/OfficeWorkspaceScreen';
 import { SectionPlaceholderScreen } from './screens/SectionPlaceholderScreen';
@@ -53,6 +55,8 @@ export function AppShell({ palette }: AppShellProps) {
   const [isTaskComposerOpen, setIsTaskComposerOpen] = useState(false);
   const [isTaskResultOpen, setIsTaskResultOpen] = useState(false);
   const [task, setTask] = useState<AiTaskExecution>();
+  const [workSchedule, setWorkSchedule] =
+    useState<WorkSchedule>(DEFAULT_WORK_SCHEDULE);
 
   const submitTask = async (prompt: string, mode: TaskMode) => {
     const localId = `task-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
@@ -110,6 +114,8 @@ export function AppShell({ palette }: AppShellProps) {
         palette={palette}
         task={task}
         topInset={insets.top}
+        workSchedule={workSchedule}
+        onWorkScheduleChange={setWorkSchedule}
       />
     ) : (
       <SectionPlaceholderScreen

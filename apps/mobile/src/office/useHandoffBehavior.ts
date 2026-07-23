@@ -26,6 +26,7 @@ import {
 } from './officePhysicsModel';
 
 type UseHandoffBehaviorOptions = {
+  enabled: boolean;
   onComplete: () => void;
   replayToken: number;
   sceneSize: SceneSize;
@@ -37,6 +38,7 @@ type PendingDelay = {
 };
 
 export function useHandoffBehavior({
+  enabled,
   onComplete,
   replayToken,
   sceneSize,
@@ -314,17 +316,30 @@ export function useHandoffBehavior({
   ]);
 
   useEffect(() => {
-    if (
-      sceneSize.height <= 0 ||
-      sceneSize.width <= 0 ||
-      lastReplayToken.current === replayToken
-    ) {
+    if (sceneSize.height <= 0 || sceneSize.width <= 0) return;
+
+    if (!enabled) {
+      runId.current += 1;
+      cancelCurrentRun();
+      lastReplayToken.current = undefined;
+      resetToHome();
+      setPhase('idle');
+      setIsRunning(false);
       return;
     }
 
+    if (lastReplayToken.current === replayToken) return;
     lastReplayToken.current = replayToken;
     runBehavior();
-  }, [replayToken, runBehavior, sceneSize.height, sceneSize.width]);
+  }, [
+    cancelCurrentRun,
+    enabled,
+    replayToken,
+    resetToHome,
+    runBehavior,
+    sceneSize.height,
+    sceneSize.width,
+  ]);
 
   useEffect(() => {
     return () => {

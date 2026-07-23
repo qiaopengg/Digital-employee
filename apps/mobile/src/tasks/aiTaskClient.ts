@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 
 import {
   apiTaskModes,
@@ -28,10 +28,39 @@ type ErrorResponse = {
   };
 };
 
-export const AI_API_BASE_URL =
-  Platform.OS === 'android'
-    ? 'http://10.0.2.2:8787'
-    : 'http://127.0.0.1:8787';
+const API_PORT = 8787;
+
+/**
+ * On a physical device there is no loopback path to the developer's
+ * machine, so 127.0.0.1 / 10.0.2.2 (simulator/emulator-only addresses)
+ * cannot reach the local API PoC. In Debug builds Metro's scriptURL
+ * already carries the developer machine's real LAN IP (that is how the
+ * device fetched the JS bundle), so we reuse that host for the API too.
+ * This keeps zero-config parity between simulator and real-device runs
+ * without hardcoding a machine-specific IP into source control.
+ */
+function getDevServerHost(): string | undefined {
+  const scriptURL: string | undefined =
+    NativeModules.SourceCode?.scriptURL;
+  if (!scriptURL) return undefined;
+
+  const match = scriptURL.match(/^https?:\/\/([^/:]+)(?::\d+)?\//);
+  return match?.[1];
+}
+
+function resolveApiBaseUrl(): string {
+  const devHost = __DEV__ ? getDevServerHost() : undefined;
+
+  if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') {
+    return `http://${devHost}:${API_PORT}`;
+  }
+
+  return Platform.OS === 'android'
+    ? `http://10.0.2.2:${API_PORT}`
+    : `http://127.0.0.1:${API_PORT}`;
+}
+
+export const AI_API_BASE_URL = resolveApiBaseUrl();
 
 export async function submitAiTask({
   localId,

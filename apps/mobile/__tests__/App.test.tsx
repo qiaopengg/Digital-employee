@@ -33,6 +33,16 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
 
+let activeRenderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+afterEach(async () => {
+  if (!activeRenderer) return;
+  await ReactTestRenderer.act(() => {
+    activeRenderer?.unmount();
+  });
+  activeRenderer = undefined;
+});
+
 async function renderApp() {
   let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
@@ -43,6 +53,8 @@ async function renderApp() {
   if (!renderer) {
     throw new Error('App did not render');
   }
+
+  activeRenderer = renderer;
 
   return renderer;
 }

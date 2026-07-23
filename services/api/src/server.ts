@@ -156,7 +156,14 @@ const isMainModule =
 if (isMainModule) {
   const config = getApiConfig();
   const server = createApiServer(config);
-  server.listen(config.port, '127.0.0.1', () => {
-    console.log(`Digital Employee API listening on 127.0.0.1:${config.port}`);
+  /**
+   * Binds every interface (not just loopback) so a physical iOS/Android
+   * device on the same LAN can reach this PoC through the developer
+   * machine's local IP. This is a local development boundary only: it has
+   * no authentication, so only run it on trusted networks and stop it when
+   * device testing is done.
+   */
+  server.listen(config.port, '0.0.0.0', () => {
+    console.log(`Digital Employee API listening on 0.0.0.0:${config.port}`);
   });
 }
