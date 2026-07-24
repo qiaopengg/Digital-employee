@@ -20,19 +20,45 @@ function readModel(value: string | undefined, fallback: string) {
   return model;
 }
 
-export function getApiConfig(
-  environment: NodeJS.ProcessEnv = process.env,
-): ApiConfig {
-  const deepSeekApiKey = environment.DEEPSEEK_API_KEY?.trim();
-  const deepSeekBaseUrl =
-    environment.DEEPSEEK_BASE_URL?.trim() || DEEPSEEK_BASE_URL;
-  const port = Number(environment.API_PORT || 8787);
+const PLACEHOLDER_KEYS = new Set([
+  '<set locally>',
+  '<replace-with-your-key>',
+  'test',
+  'your-api-key',
+  'your_key_here',
+]);
 
-  if (!deepSeekApiKey) {
+function readApiKey(value: string | undefined) {
+  const key = value?.trim();
+
+  if (!key) {
     throw new Error(
       'DEEPSEEK_API_KEY is not configured. Set it in the server environment.',
     );
   }
+
+  if (PLACEHOLDER_KEYS.has(key.toLowerCase())) {
+    throw new Error(
+      'DEEPSEEK_API_KEY is still a placeholder. Set a real key in the server environment.',
+    );
+  }
+
+  if (key.length < 20 || !/^[\x21-\x7E]+$/.test(key)) {
+    throw new Error(
+      'DEEPSEEK_API_KEY must be a valid printable ASCII secret without spaces.',
+    );
+  }
+
+  return key;
+}
+
+export function getApiConfig(
+  environment: NodeJS.ProcessEnv = process.env,
+): ApiConfig {
+  const deepSeekApiKey = readApiKey(environment.DEEPSEEK_API_KEY);
+  const deepSeekBaseUrl =
+    environment.DEEPSEEK_BASE_URL?.trim() || DEEPSEEK_BASE_URL;
+  const port = Number(environment.API_PORT || 8787);
 
   if (deepSeekBaseUrl !== DEEPSEEK_BASE_URL) {
     throw new Error('DEEPSEEK_BASE_URL must use the approved official host.');

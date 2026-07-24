@@ -1,5 +1,5 @@
 import type { EmployeeId } from './employeeProfiles';
-import type { NormalizedPoint } from './officePhysicsModel';
+import { OFFICE_ANCHORS, type NormalizedPoint } from './officePhysicsModel';
 
 export type IdleActivityPhase =
   | 'atDesk'
@@ -15,23 +15,23 @@ export type IdleActivityRoute = Readonly<{
 
 export const IDLE_ACTIVITY_ROUTES: Record<EmployeeId, IdleActivityRoute> = {
   strategy: {
-    home: { x: 0.185, y: 0.24 },
-    stand: { x: 0.185, y: 0.262 },
+    home: OFFICE_ANCHORS.strategySeat,
+    stand: OFFICE_ANCHORS.strategyStand,
     destinations: [{ x: 0.52, y: 0.262 }, { x: 0.56, y: 0.262 }],
   },
   reviewer: {
-    home: { x: 0.375, y: 0.24 },
-    stand: { x: 0.375, y: 0.262 },
+    home: OFFICE_ANCHORS.reviewerSeat,
+    stand: OFFICE_ANCHORS.reviewerStand,
     destinations: [{ x: 0.52, y: 0.262 }, { x: 0.56, y: 0.262 }],
   },
   secretary: {
-    home: { x: 0.145, y: 0.745 },
-    stand: { x: 0.385, y: 0.79 },
+    home: OFFICE_ANCHORS.secretarySeat,
+    stand: OFFICE_ANCHORS.secretaryStand,
     destinations: [{ x: 0.49, y: 0.79 }, { x: 0.55, y: 0.79 }],
   },
   break: {
-    home: { x: 0.17, y: 0.39 },
-    stand: { x: 0.17, y: 0.412 },
+    home: OFFICE_ANCHORS.contentSeat,
+    stand: OFFICE_ANCHORS.contentStand,
     destinations: [{ x: 0.52, y: 0.412 }, { x: 0.56, y: 0.412 }],
   },
 };

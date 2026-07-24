@@ -22,8 +22,12 @@ export type OfficeAnchorId =
   | 'reviewerVisitor'
   | 'reviewerSeat'
   | 'reviewerStand'
+  | 'contentSeat'
+  | 'contentStand'
   | 'secretarySeat'
+  | 'secretaryStand'
   | 'sofaSeat'
+  | 'bossDeskApproach'
   | 'bossDesk';
 
 export type OfficeFacing = 'east' | 'north' | 'south' | 'west';
@@ -41,6 +45,7 @@ export type OfficeCollider = Readonly<{
 
 const strategyWorkstation = OFFICE_WORKSTATIONS[0];
 const reviewerWorkstation = OFFICE_WORKSTATIONS[1];
+const contentWorkstation = OFFICE_WORKSTATIONS[2];
 
 export const OFFICE_ANCHORS: Record<OfficeAnchorId, NormalizedPoint> = {
   strategySeat: strategyWorkstation.seat,
@@ -49,8 +54,12 @@ export const OFFICE_ANCHORS: Record<OfficeAnchorId, NormalizedPoint> = {
   reviewerVisitor: { x: 0.29, y: reviewerWorkstation.stand.y },
   reviewerSeat: reviewerWorkstation.seat,
   reviewerStand: reviewerWorkstation.stand,
+  contentSeat: contentWorkstation.seat,
+  contentStand: contentWorkstation.stand,
   secretarySeat: { x: 0.145, y: 0.745 },
+  secretaryStand: { x: 0.385, y: 0.79 },
   sofaSeat: { x: 0.69, y: 0.69 },
+  bossDeskApproach: { x: 0.56, y: 0.29 },
   bossDesk: { x: 0.78, y: 0.12 },
 };
 
@@ -111,6 +120,17 @@ export const STRATEGY_OUTBOUND_PATH: ReadonlyArray<NormalizedPoint> = [
 
 export const STRATEGY_RETURN_PATH: ReadonlyArray<NormalizedPoint> = [
   ...STRATEGY_OUTBOUND_PATH,
+].reverse();
+
+export const SECRETARY_BOSS_OUTBOUND_PATH: ReadonlyArray<NormalizedPoint> = [
+  OFFICE_ANCHORS.secretaryStand,
+  { x: 0.54, y: OFFICE_ANCHORS.secretaryStand.y },
+  { x: 0.54, y: OFFICE_ANCHORS.bossDeskApproach.y },
+  OFFICE_ANCHORS.bossDeskApproach,
+];
+
+export const SECRETARY_BOSS_RETURN_PATH: ReadonlyArray<NormalizedPoint> = [
+  ...SECRETARY_BOSS_OUTBOUND_PATH,
 ].reverse();
 
 export const ACTOR_COLLISION_RADIUS = 0.018;

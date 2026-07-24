@@ -14,9 +14,7 @@ import type { ActorPosition } from '../office/officeMotionAnimation';
 import type { OfficeEmployee } from '../office/officeSceneModel';
 import { getEmployeePoseFrames } from '../office/employeeSpriteSources';
 import {
-  EMPLOYEE_WORLD_ASPECT_RATIO,
-  EMPLOYEE_WORLD_WIDTH_RATIO,
-  OFFICE_EMPLOYEE_SPRITE_ANCHORS,
+  getOfficeEmployeeVisualRig,
 } from '../office/officeSeatModel';
 import type { AppPalette } from '../theme/palette';
 import { EmployeeStatusIcon, employeeStatusLabels } from './EmployeeStatusIcon';
@@ -51,11 +49,12 @@ export function AnimatedEmployeeActor({
   statusDetail,
 }: AnimatedEmployeeActorProps) {
   const employeeId = employee.id as AnimatedEmployeeId;
+  const visualRig = getOfficeEmployeeVisualRig(employeeId);
   const frames = getEmployeePoseFrames(employeeId, pose, facing);
   const isWalking = pose === 'walkEmpty' || pose === 'walkWithFolder';
-  const actorWidth = sceneWidth * EMPLOYEE_WORLD_WIDTH_RATIO;
-  const actorHeight = actorWidth * EMPLOYEE_WORLD_ASPECT_RATIO;
-  const spriteAnchor = OFFICE_EMPLOYEE_SPRITE_ANCHORS[pose];
+  const actorWidth = sceneWidth * visualRig.widthRatio;
+  const actorHeight = actorWidth * visualRig.aspectRatio;
+  const spriteAnchor = visualRig.poseAnchors[pose];
   const positionStyle = useAnimatedStyle(
     () => ({
       transform: [

@@ -8,15 +8,23 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 
+import type {
+  EmployeeActivity,
+  EmployeePose,
+} from '../office/officeBehaviorModel';
+import type { IdleActivityPhase } from '../office/officeActivityModel';
 import { isNightPeriod } from '../office/officeLightingModel';
-import { OFFICE_ANCHORS, getAnchoredTopLeft } from '../office/officePhysicsModel';
-import { getTimeOfDayPeriod } from '../office/officeScheduleModel';
+import {
+  OFFICE_ANCHORS,
+  getAnchoredTopLeft,
+  type NormalizedPoint,
+} from '../office/officePhysicsModel';
+import type { TimeOfDayPeriod } from '../office/officeScheduleModel';
 import { useDeliveryBehavior } from '../office/useDeliveryBehavior';
 import { useHandoffBehavior } from '../office/useHandoffBehavior';
-import { useOfficeClock } from '../office/useOfficeClock';
+import { useIdleActivityBehavior } from '../office/useIdleActivityBehavior';
 import {
   getOfficeEmployee,
-  officeEmployees,
   type AssetMode,
   type EmployeeId,
 } from '../office/officeSceneModel';
@@ -26,6 +34,7 @@ import type { AiTaskExecution } from '../tasks/taskTypes';
 import { AnimatedEmployeeActor } from './AnimatedEmployeeActor';
 import { DeliveryDocumentIcon } from './DeliveryDocumentIcon';
 import { DeskLampGlow } from './DeskLampGlow';
+import { MobileEmployeeActor } from './MobileEmployeeActor';
 import { OfficeLightingOverlay } from './OfficeLightingOverlay';
 import { OfficeSceneStatusLayer } from './OfficeSceneStatusLayer';
 import { OfficeSeatForegroundLayer } from './OfficeSeatForegroundLayer';
@@ -40,10 +49,27 @@ type InteractiveOfficeSceneProps = {
   onSelectEmployee: (employeeId: EmployeeId) => void;
   onSelectHandoff: () => void;
   palette: AppPalette;
+  period: TimeOfDayPeriod;
   task?: AiTaskExecution;
+  workingNow: boolean;
 };
 
 const officeFloor = require('../assets/office/office-floor-v3.png');
+
+function getIdlePose(phase: IdleActivityPhase): EmployeePose {
+  return phase === 'atDesk' ? 'seatedIdle' : 'walkEmpty';
+}
+
+function getIdleActivity(phase: IdleActivityPhase): EmployeeActivity {
+  return phase === 'atDesk' ? 'working' : 'moving';
+}
+
+function getIdleStatus(phase: IdleActivityPhase) {
+  if (phase === 'atDesk') return '在工位待命';
+  if (phase === 'away') return '短暂活动，将在 20 秒内返岗';
+  if (phase === 'returning') return '正在返回工位';
+  return '离开工位进行短暂活动';
+}
 
 export function InteractiveOfficeScene({
   assetMode,
@@ -53,48 +79,108 @@ export function InteractiveOfficeScene({
   onSelectEmployee,
   onSelectHandoff,
   palette,
+  period,
   task,
+  workingNow,
 }: InteractiveOfficeSceneProps) {
   const [sceneSize, setSceneSize] = useState({ height: 0, width: 0 });
-  const now = useOfficeClock();
-  const timeOfDayPeriod = getTimeOfDayPeriod(now);
-  const isOvertimePeriod = isNightPeriod(timeOfDayPeriod);
+  const taskWorking = task?.status === 'working';
+  const taskTerminal =
+    task?.status === 'completed' || task?.status === 'failed';
   const strategyEmployee = getOfficeEmployee('strategy');
   const reviewerEmployee = getOfficeEmployee('reviewer');
+  const secretaryEmployee = getOfficeEmployee('secretary');
+  const contentEmployee = getOfficeEmployee('break');
+
   const handoffBehavior = useHandoffBehavior({
+    enabled: taskWorking,
     onComplete: onHandoffComplete,
     replayToken: handoffReplayToken,
     sceneSize,
   });
   const deliveryBehavior = useDeliveryBehavior({
+    enabled: taskTerminal,
     sceneSize,
     taskKey: task?.localId,
-    taskStatus:
-      task?.status === 'completed' || task?.status === 'failed'
-        ? task.status
-        : undefined,
   });
-  const taskTitle = task?.prompt ?? '新品发布方案';
-  const isDeskReady =
-    deliveryBehavior.phase === 'deskReady' &&
-    (task?.status === 'completed' || task?.status === 'failed');
+  const deliveryOwnsTeam =
+    taskTerminal && deliveryBehavior.phase !== 'deskReady';
+  const idleEnabled = workingNow && !taskWorking && !deliveryOwnsTeam;
+  const strategyIdle = useIdleActivityBehavior({
+    employeeId: 'strategy',
+    enabled: idleEnabled,
+    sceneSize,
+  });
+  const reviewerIdle = useIdleActivityBehavior({
+    employeeId: 'reviewer',
+    enabled: idleEnabled,
+    sceneSize,
+  });
+  const secretaryIdle = useIdleActivityBehavior({
+    employeeId: 'secretary',
+    enabled: idleEnabled,
+    sceneSize,
+  });
+  const contentIdle = useIdleActivityBehavior({
+    employeeId: 'break',
+    enabled: idleEnabled,
+    sceneSize,
+  });
+
+  const officeActive = workingNow || taskWorking || deliveryOwnsTeam;
+  const strategyPose = taskWorking
+    ? handoffBehavior.frame.strategy.pose
+    : getIdlePose(strategyIdle.phase);
+  const reviewerPose = taskWorking
+    ? handoffBehavior.frame.reviewer.pose
+    : getIdlePose(reviewerIdle.phase);
+  const strategyAtDesk = taskWorking
+    ? isSeatBoundPose(strategyPose)
+    : strategyIdle.phase === 'atDesk';
+  const reviewerAtDesk = taskWorking
+    ? isSeatBoundPose(reviewerPose)
+    : reviewerIdle.phase === 'atDesk';
+  const secretaryPhase = deliveryOwnsTeam
+    ? deliveryBehavior.secretaryPhase
+    : secretaryIdle.phase;
+  const secretaryAtDesk = secretaryPhase === 'atDesk';
+  const contentAtDesk = contentIdle.phase === 'atDesk';
+  const darkWorkingScene =
+    isNightPeriod(period) &&
+    officeActive &&
+    (workingNow || taskWorking || deliveryOwnsTeam);
+  const illuminatedDesks: NormalizedPoint[] = [];
+
+  if (darkWorkingScene && strategyAtDesk) {
+    illuminatedDesks.push(OFFICE_ANCHORS.strategySeat);
+  }
+  if (darkWorkingScene && reviewerAtDesk) {
+    illuminatedDesks.push(OFFICE_ANCHORS.reviewerSeat);
+  }
+  if (darkWorkingScene && secretaryAtDesk) {
+    illuminatedDesks.push(OFFICE_ANCHORS.secretarySeat);
+  }
+  if (darkWorkingScene && contentAtDesk) {
+    illuminatedDesks.push(OFFICE_ANCHORS.contentSeat);
+  }
+
+  const taskTitle = task?.prompt ?? '等待老板派发新任务';
+  const isDeskReady = deliveryBehavior.resultReady && taskTerminal;
   const handoffState = task
     ? task.status === 'completed'
       ? isDeskReady
-        ? '汇报就绪 · 点击老板桌查看'
-        : '汇报就绪 · 点击查看'
+        ? '汇报已放到老板桌 · 点击查看'
+        : 'AI 已完成 · 小岚正在送件'
       : task.status === 'failed'
       ? isDeskReady
-        ? '处理失败 · 点击老板桌查看'
-        : '处理失败 · 点击查看'
+        ? '失败详情已放到老板桌 · 点击查看'
+        : '处理失败 · 小岚正在送件'
       : handoffBehavior.phase === 'reviewing'
-      ? '模型处理中 · 顾宁复核'
-      : '员工协作中'
-    : handoffBehavior.phase === 'reviewing'
-    ? '已交接 · 审核中'
-    : handoffBehavior.isRunning
-    ? '工位间交接执行中'
-    : '等待重新派单';
+      ? 'AI 处理中 · 顾宁复核'
+      : 'AI 处理中 · 员工协作'
+    : workingNow
+    ? '员工在岗 · 无任务时短暂自由活动'
+    : '当前为非工作时间';
   const bossDeskPixels =
     sceneSize.width > 0
       ? getAnchoredTopLeft(
@@ -115,6 +201,22 @@ export function InteractiveOfficeScene({
         : { height, width },
     );
   };
+
+  const secretaryPosition = deliveryOwnsTeam
+    ? deliveryBehavior.secretaryPosition
+    : secretaryIdle.position;
+  const secretaryBob = deliveryOwnsTeam
+    ? deliveryBehavior.secretaryBob
+    : secretaryIdle.bob;
+  const secretaryGait = deliveryOwnsTeam
+    ? deliveryBehavior.secretaryGait
+    : secretaryIdle.gait;
+  const secretaryFacing = deliveryOwnsTeam
+    ? deliveryBehavior.secretaryFacing
+    : secretaryIdle.facing;
+  const documentPosition = deliveryBehavior.documentIsCarried
+    ? deliveryBehavior.secretaryPosition
+    : deliveryBehavior.iconPosition;
 
   return (
     <ImageBackground
@@ -148,80 +250,126 @@ export function InteractiveOfficeScene({
         </View>
       </Pressable>
 
-      {officeEmployees
-        .filter(
-          employee => employee.id === 'secretary' || employee.id === 'break',
-        )
-        .map(employee => (
-          <StaticEmployeeActor
-            employee={employee}
-            key={employee.id}
-            onPress={() => onSelectEmployee(employee.id)}
-            palette={palette}
-            sceneSize={sceneSize}
-          />
-        ))}
+      {!officeActive && sceneSize.width > 0 ? (
+        <StaticEmployeeActor
+          employee={contentEmployee}
+          onPress={() => onSelectEmployee('break')}
+          palette={palette}
+          sceneSize={sceneSize}
+        />
+      ) : undefined}
 
-      {sceneSize.width > 0 ? (
+      {officeActive && sceneSize.width > 0 ? (
         <>
           <AnimatedEmployeeActor
-            bob={handoffBehavior.strategyBob}
-            depth={
-              isSeatBoundPose(handoffBehavior.frame.strategy.pose) ? 52 : 66
-            }
+            bob={taskWorking ? handoffBehavior.strategyBob : strategyIdle.bob}
+            depth={isSeatBoundPose(strategyPose) ? 52 : 66}
             employee={strategyEmployee}
-            facing={handoffBehavior.frame.strategy.facing}
-            gait={handoffBehavior.strategyGait}
+            facing={
+              taskWorking
+                ? handoffBehavior.frame.strategy.facing
+                : strategyIdle.facing
+            }
+            gait={
+              taskWorking ? handoffBehavior.strategyGait : strategyIdle.gait
+            }
             onPress={() => onSelectEmployee('strategy')}
             palette={palette}
-            pose={handoffBehavior.frame.strategy.pose}
-            position={handoffBehavior.strategyPosition}
+            pose={strategyPose}
+            position={
+              taskWorking
+                ? handoffBehavior.strategyPosition
+                : strategyIdle.position
+            }
             sceneWidth={sceneSize.width}
-            status={handoffBehavior.frame.strategy.activity}
-            statusDetail={handoffBehavior.frame.strategy.status}
+            status={
+              taskWorking
+                ? handoffBehavior.frame.strategy.activity
+                : getIdleActivity(strategyIdle.phase)
+            }
+            statusDetail={
+              taskWorking
+                ? handoffBehavior.frame.strategy.status
+                : getIdleStatus(strategyIdle.phase)
+            }
           />
           <AnimatedEmployeeActor
-            bob={handoffBehavior.reviewerBob}
-            depth={
-              isSeatBoundPose(handoffBehavior.frame.reviewer.pose) ? 52 : 67
-            }
+            bob={taskWorking ? handoffBehavior.reviewerBob : reviewerIdle.bob}
+            depth={isSeatBoundPose(reviewerPose) ? 52 : 67}
             employee={reviewerEmployee}
-            facing={handoffBehavior.frame.reviewer.facing}
-            gait={handoffBehavior.reviewerGait}
+            facing={
+              taskWorking
+                ? handoffBehavior.frame.reviewer.facing
+                : reviewerIdle.facing
+            }
+            gait={
+              taskWorking ? handoffBehavior.reviewerGait : reviewerIdle.gait
+            }
             onPress={() => onSelectEmployee('reviewer')}
             palette={palette}
-            pose={handoffBehavior.frame.reviewer.pose}
-            position={handoffBehavior.reviewerPosition}
+            pose={reviewerPose}
+            position={
+              taskWorking
+                ? handoffBehavior.reviewerPosition
+                : reviewerIdle.position
+            }
             sceneWidth={sceneSize.width}
-            status={handoffBehavior.frame.reviewer.activity}
-            statusDetail={handoffBehavior.frame.reviewer.status}
+            status={
+              taskWorking
+                ? handoffBehavior.frame.reviewer.activity
+                : getIdleActivity(reviewerIdle.phase)
+            }
+            statusDetail={
+              taskWorking
+                ? handoffBehavior.frame.reviewer.status
+                : getIdleStatus(reviewerIdle.phase)
+            }
+          />
+
+          <MobileEmployeeActor
+            bob={secretaryBob}
+            depth={secretaryAtDesk ? 54 : 68}
+            employee={secretaryEmployee}
+            facing={secretaryFacing}
+            gait={secretaryGait}
+            onPress={() => onSelectEmployee('secretary')}
+            palette={palette}
+            phase={secretaryPhase}
+            position={secretaryPosition}
+            sceneWidth={sceneSize.width}
+          />
+          <MobileEmployeeActor
+            bob={contentIdle.bob}
+            depth={contentAtDesk ? 52 : 68}
+            employee={contentEmployee}
+            facing={contentIdle.facing}
+            gait={contentIdle.gait}
+            onPress={() => onSelectEmployee('break')}
+            palette={palette}
+            phase={contentIdle.phase}
+            position={contentIdle.position}
+            sceneWidth={sceneSize.width}
           />
         </>
       ) : undefined}
 
-      {isOvertimePeriod ? (
-        <>
-          <DeskLampGlow
-            anchor={OFFICE_ANCHORS.strategySeat}
-            sceneSize={sceneSize}
-          />
-          <DeskLampGlow
-            anchor={OFFICE_ANCHORS.reviewerSeat}
-            sceneSize={sceneSize}
-          />
-        </>
-      ) : undefined}
-
-      {sceneSize.width > 0 ? (
+      {sceneSize.width > 0 && taskTerminal ? (
         <DeliveryDocumentIcon
           opacity={deliveryBehavior.iconOpacity}
           palette={palette}
-          position={deliveryBehavior.iconPosition}
+          position={documentPosition}
         />
       ) : undefined}
 
       <OfficeSeatForegroundLayer sceneSize={sceneSize} />
-      <OfficeLightingOverlay period={timeOfDayPeriod} />
+      <OfficeLightingOverlay period={period} />
+      {illuminatedDesks.map((anchor, index) => (
+        <DeskLampGlow
+          anchor={anchor}
+          key={`${anchor.x}-${anchor.y}-${index}`}
+          sceneSize={sceneSize}
+        />
+      ))}
 
       {isDeskReady && bossDeskPixels ? (
         <Pressable
@@ -240,10 +388,7 @@ export function InteractiveOfficeScene({
           ]}
         >
           <View
-            style={[
-              styles.deskNoticeDot,
-              { backgroundColor: palette.accent },
-            ]}
+            style={[styles.deskNoticeDot, { backgroundColor: palette.accent }]}
           />
           <Text style={[styles.deskNoticeText, { color: palette.secretary }]}>
             汇报

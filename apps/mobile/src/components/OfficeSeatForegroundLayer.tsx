@@ -15,8 +15,6 @@ type OccluderRect = Readonly<{
 }>;
 
 const officeFloor = require('../assets/office/office-floor-v3.png');
-const REVIEWER_OFFSET_X =
-  OFFICE_ANCHORS.reviewerSeat.x - OFFICE_ANCHORS.strategySeat.x;
 const SECRETARY_OFFSET = {
   x: OFFICE_ANCHORS.secretarySeat.x - OFFICE_ANCHORS.strategySeat.x,
   y: OFFICE_ANCHORS.secretarySeat.y - OFFICE_ANCHORS.strategySeat.y,
@@ -40,13 +38,69 @@ const strategyOccluders: ReadonlyArray<OccluderRect> = [
   { height: 0.023, id: 'right-caster', width: 0.018, x: 0.214, y: 0.264 },
 ];
 
+export const reviewerOccluders: ReadonlyArray<OccluderRect> = [
+  {
+    borderRadius: 999,
+    height: 0.025,
+    id: 'reviewer-backrest',
+    width: 0.071,
+    x: 0.3345,
+    y: 0.225,
+  },
+  {
+    height: 0.026,
+    id: 'reviewer-left-arm',
+    width: 0.013,
+    x: 0.335,
+    y: 0.229,
+  },
+  {
+    height: 0.026,
+    id: 'reviewer-right-arm',
+    width: 0.013,
+    x: 0.406,
+    y: 0.229,
+  },
+  {
+    height: 0.012,
+    id: 'reviewer-seat-front',
+    width: 0.07,
+    x: 0.335,
+    y: 0.247,
+  },
+  {
+    height: 0.04,
+    id: 'reviewer-center-post',
+    width: 0.012,
+    x: 0.369,
+    y: 0.251,
+  },
+  {
+    height: 0.014,
+    id: 'reviewer-caster-cross',
+    width: 0.072,
+    x: 0.334,
+    y: 0.271,
+  },
+  {
+    height: 0.023,
+    id: 'reviewer-left-caster',
+    width: 0.018,
+    x: 0.329,
+    y: 0.264,
+  },
+  {
+    height: 0.023,
+    id: 'reviewer-right-caster',
+    width: 0.018,
+    x: 0.404,
+    y: 0.264,
+  },
+];
+
 const seatOccluders = [
   ...strategyOccluders.map(rect => ({ ...rect, id: `strategy-${rect.id}` })),
-  ...strategyOccluders.map(rect => ({
-    ...rect,
-    id: `reviewer-${rect.id}`,
-    x: rect.x + REVIEWER_OFFSET_X,
-  })),
+  ...reviewerOccluders,
   ...strategyOccluders.map(rect => ({
     ...rect,
     id: `secretary-${rect.id}`,
