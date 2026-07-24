@@ -99,14 +99,9 @@ export const OFFICE_COLLIDERS: ReadonlyArray<OfficeCollider> = [
     id: 'secretary-reception',
     rect: { height: 0.12, width: 0.35, x: 0.01, y: 0.64 },
   },
-  {
-    id: 'meeting-room',
-    rect: OFFICE_FUNCTIONAL_ZONES.meetingRoom,
-  },
-  {
-    id: 'lounge-and-pantry',
-    rect: OFFICE_FUNCTIONAL_ZONES.loungeAndPantry,
-  },
+  // Meeting and lounge rectangles are navigable floor zones, not solid
+  // obstacles. Their furniture/walls should be modelled as separate
+  // colliders so employees can enter these rooms through their doorways.
   ...OFFICE_WORKSTATIONS.map(workstation => ({
     id: `workstation-${workstation.id}`,
     rect: workstation.deskRect,

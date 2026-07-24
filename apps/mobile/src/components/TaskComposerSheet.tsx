@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -34,6 +34,7 @@ export function TaskComposerSheet({
   visible,
 }: TaskComposerSheetProps) {
   const insets = useSafeAreaInsets();
+  const inputRef = useRef<TextInput>(null);
   const [mode, setMode] = useState<TaskMode>('标准');
   const [task, setTask] = useState('');
   const normalizedTask = task.trim();
@@ -41,6 +42,7 @@ export function TaskComposerSheet({
 
   useEffect(() => {
     if (!visible) {
+      inputRef.current?.clear();
       setMode('标准');
       setTask('');
     }
@@ -99,6 +101,7 @@ export function TaskComposerSheet({
           </Text>
 
           <TextInput
+            ref={inputRef}
             accessibilityLabel="任务目标"
             autoFocus
             keyboardAppearance={
@@ -118,7 +121,6 @@ export function TaskComposerSheet({
               },
             ]}
             textAlignVertical="top"
-            value={task}
           />
 
           <Text style={[styles.modeTitle, { color: palette.primaryText }]}>
@@ -182,7 +184,8 @@ export function TaskComposerSheet({
             <Text
               style={[styles.localNoticeBody, { color: palette.secondaryText }]}
             >
-              任务会由服务端安全调用 DeepSeek；供应商密钥不会进入手机或办公室场景。
+              任务会由服务端安全调用
+              DeepSeek；供应商密钥不会进入手机或办公室场景。
             </Text>
           </View>
         </View>

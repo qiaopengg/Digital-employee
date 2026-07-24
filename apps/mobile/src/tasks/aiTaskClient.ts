@@ -1,10 +1,7 @@
 import { NativeModules, Platform } from 'react-native';
 
-import {
-  apiTaskModes,
-  type AiTaskExecution,
-  type TaskMode,
-} from './taskTypes';
+import { normalizeTaskReport } from './taskReport';
+import { apiTaskModes, type AiTaskExecution, type TaskMode } from './taskTypes';
 
 type TaskResponse = {
   answer: string;
@@ -12,6 +9,7 @@ type TaskResponse = {
   id: string;
   model: string;
   personaReport: string;
+  report?: unknown;
   status: 'completed';
   usage: {
     completionTokens: number;
@@ -40,8 +38,7 @@ const API_PORT = 8787;
  * without hardcoding a machine-specific IP into source control.
  */
 function getDevServerHost(): string | undefined {
-  const scriptURL: string | undefined =
-    NativeModules.SourceCode?.scriptURL;
+  const scriptURL: string | undefined = NativeModules.SourceCode?.scriptURL;
   if (!scriptURL) return undefined;
 
   const match = scriptURL.match(/^https?:\/\/([^/:]+)(?::\d+)?\//);
@@ -95,6 +92,8 @@ export async function submitAiTask({
     throw new Error(body.error?.message || `任务服务返回 ${response.status}`);
   }
 
+  const report = normalizeTaskReport(body.report);
+
   return {
     answer: body.answer,
     completedAt: body.completedAt,
@@ -104,6 +103,7 @@ export async function submitAiTask({
     personaReport: body.personaReport,
     prompt,
     remoteId: body.id,
+    ...(report ? { report } : {}),
     status: 'completed',
     usage: body.usage,
   };

@@ -15,6 +15,7 @@ import {
 } from '../office/officeSceneModel';
 import type { AiTaskExecution } from '../tasks/taskTypes';
 import type { AppPalette } from '../theme/palette';
+import { TaskReportRenderer } from './TaskReportRenderer';
 
 type TaskResultSheetProps = {
   onClose: () => void;
@@ -58,7 +59,9 @@ export function TaskResultSheet({
             <Text style={[styles.eyebrow, { color: palette.accent }]}>
               员工正式汇报
             </Text>
-            <Text style={[styles.navigationTitle, { color: palette.primaryText }]}>
+            <Text
+              style={[styles.navigationTitle, { color: palette.primaryText }]}
+            >
               {task.status === 'completed' ? '任务已完成' : '任务需要处理'}
             </Text>
           </View>
@@ -72,11 +75,16 @@ export function TaskResultSheet({
               pressed ? styles.pressed : undefined,
             ]}
           >
-            <Text style={[styles.closeText, { color: palette.accent }]}>完成</Text>
+            <Text style={[styles.closeText, { color: palette.accent }]}>
+              完成
+            </Text>
           </Pressable>
         </View>
 
         <ScrollView
+          nestedScrollEnabled
+          showsVerticalScrollIndicator
+          style={styles.scroll}
           contentContainerStyle={[
             styles.content,
             { paddingBottom: Math.max(insets.bottom, 20) + 20 },
@@ -101,7 +109,9 @@ export function TaskResultSheet({
                 <Text style={[styles.teamName, { color: palette.primaryText }]}>
                   {employee.name}
                 </Text>
-                <Text style={[styles.teamRole, { color: palette.secondaryText }]}>
+                <Text
+                  style={[styles.teamRole, { color: palette.secondaryText }]}
+                >
                   {employee.role}
                 </Text>
               </View>
@@ -113,17 +123,20 @@ export function TaskResultSheet({
               <Text style={[styles.persona, { color: palette.secretary }]}>
                 {task.personaReport}
               </Text>
-              <View style={[styles.resultCard, { backgroundColor: palette.card }]}>
-                <Text
-                  selectable
-                  style={[styles.answer, { color: palette.primaryText }]}
+              {task.report ? (
+                <TaskReportRenderer palette={palette} report={task.report} />
+              ) : (
+                <View
+                  style={[styles.resultCard, { backgroundColor: palette.card }]}
                 >
-                  {task.answer}
-                </Text>
-              </View>
-              <Text style={[styles.meta, { color: palette.secondaryText }]}>
-                {task.model} · {task.usage?.totalTokens ?? 0} tokens
-              </Text>
+                  <Text
+                    selectable
+                    style={[styles.answer, { color: palette.primaryText }]}
+                  >
+                    {task.answer}
+                  </Text>
+                </View>
+              )}
               <Pressable
                 accessibilityLabel="系统分享任务结果"
                 accessibilityRole="button"
@@ -143,11 +156,15 @@ export function TaskResultSheet({
               </Pressable>
             </>
           ) : (
-            <View style={[styles.resultCard, { backgroundColor: palette.card }]}>
+            <View
+              style={[styles.resultCard, { backgroundColor: palette.card }]}
+            >
               <Text style={[styles.errorTitle, { color: palette.primaryText }]}>
                 本次处理未完成
               </Text>
-              <Text style={[styles.errorBody, { color: palette.secondaryText }]}>
+              <Text
+                style={[styles.errorBody, { color: palette.secondaryText }]}
+              >
                 {task.error}
               </Text>
             </View>
@@ -167,7 +184,6 @@ const styles = StyleSheet.create({
   errorBody: { fontSize: 14, lineHeight: 21, marginTop: 8 },
   errorTitle: { fontSize: 18, fontWeight: '700' },
   eyebrow: { fontSize: 11, fontWeight: '800' },
-  meta: { fontSize: 11, marginTop: 10 },
   navigation: {
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -181,6 +197,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.64 },
   prompt: { fontSize: 24, fontWeight: '800', lineHeight: 31 },
   resultCard: { borderRadius: 18, marginTop: 12, padding: 16 },
+  scroll: { flex: 1 },
   shareButton: {
     alignItems: 'center',
     borderRadius: 15,

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { getEmployeeStaffId } from '../office/employeeProfiles';
 import {
   getOfficeEmployee,
   type AssetMode,
@@ -107,7 +108,8 @@ export function OfficeDetailSheet({
           </View>
         </View>
         <Text style={[styles.subtitle, { color: palette.secondaryText }]}>
-          {employee.role} · {employee.detail}
+          工号 {getEmployeeStaffId(employee.id)} · {employee.role} ·{' '}
+          {employee.detail}
         </Text>
         <Text style={[styles.profileCopy, { color: palette.primaryText }]}>
           {employee.personality}

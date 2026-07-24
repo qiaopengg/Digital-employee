@@ -49,10 +49,9 @@ export function OfficeWorkspaceScreen({
   const now = useOfficeClock();
   const workingNow = isWorkingHour(now, workSchedule);
   const period = getTimeOfDayPeriod(now);
-  const hourRotation = ((now.getHours() % 12) + now.getMinutes() / 60) * 30;
-  const minuteRotation = now.getMinutes() * 6;
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [selection, setSelection] = useState<OfficeSelection>();
+  const [bossPresent, setBossPresent] = useState(true);
   const [handoffComplete, setHandoffComplete] = useState(false);
   const [handoffReplayToken, setHandoffReplayToken] = useState(0);
   const [assetMode, setAssetMode] = useState<AssetMode>('active');
@@ -92,105 +91,18 @@ export function OfficeWorkspaceScreen({
         {
           backgroundColor: palette.background,
           paddingBottom: bottomInset,
-          paddingTop: topInset + 8,
+          paddingTop: topInset,
         },
       ]}
     >
-      <View style={styles.header}>
-        <View style={styles.headerCopy}>
-          <Text style={[styles.title, { color: palette.primaryText }]}>
-            办公室
-          </Text>
-          <Text style={[styles.subtitle, { color: palette.secondaryText }]}>
-            {task?.status === 'working'
-              ? handoffComplete
-                ? 'AI 处理中 · 顾宁正在复核'
-                : 'AI 处理中 · 员工正在协作'
-              : task?.status === 'completed' || task?.status === 'failed'
-              ? '小岚负责送件 · 老板桌接收汇报'
-              : workingNow
-              ? '4 人在岗 · 无任务时短暂自由活动'
-              : '非工作时间 · 员工已离岗'}
-          </Text>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable
-            accessibilityLabel="设置工作时间"
-            accessibilityRole="button"
-            onPress={() => setIsScheduleOpen(true)}
-            style={({ pressed }) => [
-              styles.clock,
-              { backgroundColor: palette.card, borderColor: palette.separator },
-              pressed ? styles.pressed : undefined,
-            ]}
-          >
-            <View style={[styles.clockFace, { borderColor: palette.accent }]}>
-              <View
-                style={[
-                  styles.clockHourHand,
-                  { backgroundColor: palette.accent },
-                  { transform: [{ rotate: `${hourRotation}deg` }] },
-                ]}
-              />
-              <View
-                style={[
-                  styles.clockMinuteHand,
-                  { backgroundColor: palette.accent },
-                  { transform: [{ rotate: `${minuteRotation}deg` }] },
-                ]}
-              />
-            </View>
-            <View>
-              <Text style={[styles.clockTime, { color: palette.primaryText }]}>
-                {now.toLocaleTimeString('zh-CN', {
-                  hour: '2-digit',
-                  hour12: false,
-                  minute: '2-digit',
-                })}
-              </Text>
-              <Text
-                style={[
-                  styles.clockState,
-                  {
-                    color: workingNow ? palette.success : palette.secondaryText,
-                  },
-                ]}
-              >
-                {workingNow
-                  ? '工作中'
-                  : period === 'midday'
-                  ? '午休'
-                  : '非工作时间'}
-              </Text>
-            </View>
-          </Pressable>
-          <Pressable
-            accessibilityLabel="查看公司资产"
-            accessibilityRole="button"
-            onPress={() => setSelection({ type: 'asset' })}
-            style={({ pressed }) => [
-              styles.balance,
-              { backgroundColor: palette.card, borderColor: palette.separator },
-              pressed ? styles.pressed : undefined,
-            ]}
-          >
-            <Text
-              style={[styles.balanceLabel, { color: palette.secondaryText }]}
-            >
-              公司余额
-            </Text>
-            <Text style={[styles.balanceValue, { color: palette.primaryText }]}>
-              ¥ 8,420
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
       <View style={styles.sceneStage}>
-        <View style={[styles.sceneFrame, { borderColor: palette.separator }]}>
+        <View style={styles.sceneFrame}>
           <InteractiveOfficeScene
             assetMode={assetMode}
+            bossPresent={bossPresent}
             handoffReplayToken={handoffReplayToken}
+            now={now}
+            onConfigureSchedule={() => setIsScheduleOpen(true)}
             onHandoffComplete={() => setHandoffComplete(true)}
             onSelectAsset={() => setSelection({ type: 'asset' })}
             onSelectEmployee={employeeId =>
@@ -203,12 +115,51 @@ export function OfficeWorkspaceScreen({
               }
               setSelection({ type: 'handoff' });
             }}
+            onToggleBossPresence={() => setBossPresent(value => !value)}
             palette={palette}
             period={period}
             task={task}
             workingNow={workingNow}
           />
         </View>
+        <Pressable
+          accessibilityLabel="查看公司资产"
+          accessibilityRole="button"
+          onPress={() => setSelection({ type: 'asset' })}
+          style={({ pressed }) => [
+            styles.assetButton,
+            {
+              backgroundColor: palette.navigation,
+              borderColor: palette.separator,
+            },
+            pressed ? styles.pressed : undefined,
+          ]}
+        >
+          <View style={styles.assetButtonIcon}>
+            <View
+              style={[styles.assetIconBar, { backgroundColor: palette.accent }]}
+            />
+            <View
+              style={[
+                styles.assetIconBar,
+                styles.assetIconBarMiddle,
+                { backgroundColor: palette.accent },
+              ]}
+            />
+            <View
+              style={[
+                styles.assetIconBar,
+                styles.assetIconBarShort,
+                { backgroundColor: palette.accent },
+              ]}
+            />
+          </View>
+          <Text
+            style={[styles.assetButtonLabel, { color: palette.primaryText }]}
+          >
+            资产
+          </Text>
+        </Pressable>
         <Pressable
           accessibilityLabel="新建任务"
           accessibilityRole="button"
@@ -279,104 +230,48 @@ export function OfficeWorkspaceScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 12,
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    minHeight: 58,
-    paddingHorizontal: 4,
-  },
-  headerCopy: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.6,
-  },
-  subtitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 3,
-  },
-  headerActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  clock: {
-    alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    gap: 6,
-    minHeight: 48,
-    paddingHorizontal: 8,
-  },
-  clockFace: {
-    borderRadius: 14,
-    borderWidth: 1.5,
-    height: 28,
-    position: 'relative',
-    width: 28,
-  },
-  clockHourHand: {
-    borderRadius: 1,
-    height: 7,
-    left: 12.5,
-    position: 'absolute',
-    top: 6,
-    transformOrigin: '50% 100%',
-    width: 2,
-  },
-  clockMinuteHand: {
-    borderRadius: 1,
-    height: 9,
-    left: 13,
-    position: 'absolute',
-    top: 4,
-    transformOrigin: '50% 100%',
-    width: 1,
-  },
-  clockTime: {
-    fontSize: 12,
-    fontVariant: ['tabular-nums'],
-    fontWeight: '800',
-  },
-  clockState: {
-    fontSize: 8,
-    fontWeight: '700',
-    marginTop: 1,
-  },
-  balance: {
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    minWidth: 106,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  balanceLabel: {
-    fontSize: 9,
-    fontWeight: '600',
-  },
-  balanceValue: {
-    fontSize: 15,
-    fontWeight: '800',
-    marginTop: 1,
   },
   sceneFrame: {
-    borderRadius: 24,
-    borderWidth: StyleSheet.hairlineWidth,
     flex: 1,
-    minHeight: 400,
     overflow: 'hidden',
   },
   sceneStage: {
     flex: 1,
     position: 'relative',
+  },
+  assetButton: {
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: 'center',
+    minHeight: 58,
+    position: 'absolute',
+    right: 10,
+    top: '44%',
+    width: 52,
+    zIndex: 80,
+  },
+  assetButtonIcon: {
+    alignItems: 'flex-end',
+    height: 18,
+    justifyContent: 'space-between',
+    width: 22,
+  },
+  assetIconBar: {
+    borderRadius: 2,
+    height: 4,
+    width: 22,
+  },
+  assetIconBarMiddle: {
+    width: 17,
+  },
+  assetIconBarShort: {
+    width: 12,
+  },
+  assetButtonLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    marginTop: 5,
   },
   newTaskButton: {
     alignItems: 'center',
@@ -385,8 +280,8 @@ const styles = StyleSheet.create({
     bottom: OFFICE_BOTTOM_CONTROL.bottom,
     flexDirection: 'row',
     height: OFFICE_BOTTOM_CONTROL.height,
-    left: 10,
     justifyContent: 'center',
+    left: 10,
     paddingHorizontal: 13,
     position: 'absolute',
     width: OFFICE_BOTTOM_CONTROL.width,

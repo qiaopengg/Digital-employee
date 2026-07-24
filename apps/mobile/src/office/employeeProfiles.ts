@@ -2,6 +2,18 @@ import type { ImageSourcePropType } from 'react-native';
 
 export type EmployeeId = 'strategy' | 'reviewer' | 'secretary' | 'break';
 
+/** Stable business employee numbers; role ids remain unchanged for sprites/routes. */
+export const EMPLOYEE_STAFF_IDS: Readonly<Record<EmployeeId, string>> = {
+  strategy: 'DE-0001',
+  reviewer: 'DE-0002',
+  secretary: 'DE-0003',
+  break: 'DE-0004',
+};
+
+export function getEmployeeStaffId(employeeId: EmployeeId) {
+  return EMPLOYEE_STAFF_IDS[employeeId];
+}
+
 export type EmployeeSkill = Readonly<{
   level: 1 | 2 | 3 | 4 | 5;
   name: string;
