@@ -25,6 +25,7 @@ import {
 } from '../office/officePhysicsModel';
 import type { TimeOfDayPeriod } from '../office/officeScheduleModel';
 import { useDeliveryBehavior } from '../office/useDeliveryBehavior';
+import { useDepartureBehavior } from '../office/useDepartureBehavior';
 import { useHandoffBehavior } from '../office/useHandoffBehavior';
 import { useIdleActivityBehavior } from '../office/useIdleActivityBehavior';
 import {
@@ -84,6 +85,8 @@ function getIdleStatus(phase: IdleActivityPhase) {
   if (phase === 'returning') return '正在返回工位';
   return '离开工位进行短暂活动';
 }
+
+const DEPARTURE_STATUS = '下班，正在离开办公室';
 
 export function InteractiveOfficeScene({
   assetMode,
@@ -161,6 +164,18 @@ export function InteractiveOfficeScene({
     taskKey: task?.localId,
   });
   const idleEnabled = workingNow && !taskWorking && !taskTerminal;
+  // An employee has no remaining task duty once they are not the strategy/
+  // reviewer pair mid-handoff and not carrying the terminal delivery. Off
+  // duty + outside working hours (and not the boss-driven delivery flow)
+  // means they should walk out for the day instead of sitting idle.
+  const strategyOnDuty = taskWorking;
+  const reviewerOnDuty = taskWorking || taskTerminal;
+  const secretaryOnDuty = taskTerminal;
+  const contentOnDuty = false;
+  const strategyOffForDay = !workingNow && !strategyOnDuty;
+  const reviewerOffForDay = !workingNow && !reviewerOnDuty;
+  const secretaryOffForDay = !workingNow && !secretaryOnDuty;
+  const contentOffForDay = !workingNow && !contentOnDuty;
   const strategyIdle = useIdleActivityBehavior({
     employeeId: 'strategy',
     enabled: idleEnabled && activeIdleEmployee === 'strategy',
@@ -185,28 +200,81 @@ export function InteractiveOfficeScene({
     onComplete: completeContentIdle,
     sceneSize,
   });
+  const strategyDeparture = useDepartureBehavior({
+    employeeId: 'strategy',
+    enabled: strategyOffForDay,
+    sceneSize,
+  });
+  const reviewerDeparture = useDepartureBehavior({
+    employeeId: 'reviewer',
+    enabled: reviewerOffForDay,
+    sceneSize,
+  });
+  const secretaryDeparture = useDepartureBehavior({
+    employeeId: 'secretary',
+    enabled: secretaryOffForDay,
+    sceneSize,
+  });
+  const contentDeparture = useDepartureBehavior({
+    employeeId: 'break',
+    enabled: contentOffForDay,
+    sceneSize,
+  });
 
-  const officeActive = workingNow || taskWorking || taskTerminal;
+  const anyoneLeaving =
+    strategyDeparture.phase === 'leaving' ||
+    reviewerDeparture.phase === 'leaving' ||
+    secretaryDeparture.phase === 'leaving' ||
+    contentDeparture.phase === 'leaving';
+  const officeActive =
+    workingNow || taskWorking || taskTerminal || anyoneLeaving;
+  const strategyGone =
+    !strategyOnDuty && strategyDeparture.phase === 'departed';
+  const strategyLeaving =
+    !strategyOnDuty && strategyDeparture.phase === 'leaving';
+  const reviewerGone =
+    !reviewerOnDuty && reviewerDeparture.phase === 'departed';
+  const reviewerLeaving =
+    !reviewerOnDuty && reviewerDeparture.phase === 'leaving';
+  const secretaryGone =
+    !secretaryOnDuty && secretaryDeparture.phase === 'departed';
+  const secretaryLeaving =
+    !secretaryOnDuty && secretaryDeparture.phase === 'leaving';
+  const contentGone = !contentOnDuty && contentDeparture.phase === 'departed';
+  const contentLeaving = !contentOnDuty && contentDeparture.phase === 'leaving';
   const strategyPose = taskWorking
     ? handoffBehavior.frame.strategy.pose
+    : strategyLeaving
+    ? 'walkEmpty'
     : getIdlePose(strategyIdle.phase);
-  const reviewerPhase = taskTerminal
+  const reviewerIdlePhase = taskTerminal
     ? deliveryBehavior.reviewerPhase
     : reviewerIdle.phase;
+  const reviewerPhase = reviewerLeaving ? 'departing' : reviewerIdlePhase;
   const reviewerPose = taskWorking
     ? handoffBehavior.frame.reviewer.pose
-    : getIdlePose(reviewerPhase);
-  const strategyAtDesk = taskWorking
-    ? isSeatBoundPose(strategyPose)
-    : strategyIdle.phase === 'atDesk';
-  const reviewerAtDesk = taskWorking
-    ? isSeatBoundPose(reviewerPose)
-    : reviewerPhase === 'atDesk';
-  const secretaryPhase = taskTerminal
+    : reviewerLeaving
+    ? 'walkEmpty'
+    : getIdlePose(reviewerIdlePhase);
+  const strategyAtDesk =
+    !strategyGone &&
+    !strategyLeaving &&
+    (taskWorking
+      ? isSeatBoundPose(strategyPose)
+      : strategyIdle.phase === 'atDesk');
+  const reviewerAtDesk =
+    !reviewerGone &&
+    !reviewerLeaving &&
+    (taskWorking ? isSeatBoundPose(reviewerPose) : reviewerPhase === 'atDesk');
+  const secretaryIdlePhase = taskTerminal
     ? deliveryBehavior.secretaryPhase
     : secretaryIdle.phase;
-  const secretaryAtDesk = secretaryPhase === 'atDesk';
-  const contentAtDesk = contentIdle.phase === 'atDesk';
+  const secretaryPhase = secretaryLeaving ? 'departing' : secretaryIdlePhase;
+  const secretaryAtDesk =
+    !secretaryGone && !secretaryLeaving && secretaryIdlePhase === 'atDesk';
+  const contentPhase = contentLeaving ? 'departing' : contentIdle.phase;
+  const contentAtDesk =
+    !contentGone && !contentLeaving && contentIdle.phase === 'atDesk';
   const darkWorkingScene = isNightPeriod(period) && officeActive;
   const illuminatedDesks: NormalizedPoint[] = [];
 
@@ -275,28 +343,52 @@ export function InteractiveOfficeScene({
 
   const reviewerBob = taskTerminal
     ? deliveryBehavior.reviewerBob
+    : reviewerLeaving
+    ? reviewerDeparture.bob
     : reviewerIdle.bob;
   const reviewerFacing = taskTerminal
     ? deliveryBehavior.reviewerFacing
+    : reviewerLeaving
+    ? reviewerDeparture.facing
     : reviewerIdle.facing;
   const reviewerGait = taskTerminal
     ? deliveryBehavior.reviewerGait
+    : reviewerLeaving
+    ? reviewerDeparture.gait
     : reviewerIdle.gait;
   const reviewerPosition = taskTerminal
     ? deliveryBehavior.reviewerPosition
+    : reviewerLeaving
+    ? reviewerDeparture.position
     : reviewerIdle.position;
   const secretaryPosition = taskTerminal
     ? deliveryBehavior.secretaryPosition
+    : secretaryLeaving
+    ? secretaryDeparture.position
     : secretaryIdle.position;
   const secretaryBob = taskTerminal
     ? deliveryBehavior.secretaryBob
+    : secretaryLeaving
+    ? secretaryDeparture.bob
     : secretaryIdle.bob;
   const secretaryGait = taskTerminal
     ? deliveryBehavior.secretaryGait
+    : secretaryLeaving
+    ? secretaryDeparture.gait
     : secretaryIdle.gait;
   const secretaryFacing = taskTerminal
     ? deliveryBehavior.secretaryFacing
+    : secretaryLeaving
+    ? secretaryDeparture.facing
     : secretaryIdle.facing;
+  const contentPosition = contentLeaving
+    ? contentDeparture.position
+    : contentIdle.position;
+  const contentBob = contentLeaving ? contentDeparture.bob : contentIdle.bob;
+  const contentGait = contentLeaving ? contentDeparture.gait : contentIdle.gait;
+  const contentFacing = contentLeaving
+    ? contentDeparture.facing
+    : contentIdle.facing;
   const documentPosition =
     deliveryBehavior.documentCarrier === 'reviewer'
       ? deliveryBehavior.reviewerPosition
@@ -342,7 +434,7 @@ export function InteractiveOfficeScene({
         </View>
       </Pressable>
 
-      {!officeActive && sceneSize.width > 0 ? (
+      {!officeActive && !contentGone && sceneSize.width > 0 ? (
         <StaticEmployeeActor
           employee={contentEmployee}
           onPress={() => onSelectEmployee('break')}
@@ -353,93 +445,125 @@ export function InteractiveOfficeScene({
 
       {officeActive && sceneSize.width > 0 ? (
         <>
-          <AnimatedEmployeeActor
-            bob={taskWorking ? handoffBehavior.strategyBob : strategyIdle.bob}
-            depth={isSeatBoundPose(strategyPose) ? 52 : 66}
-            employee={strategyEmployee}
-            facing={
-              taskWorking
-                ? handoffBehavior.frame.strategy.facing
-                : strategyIdle.facing
-            }
-            gait={
-              taskWorking ? handoffBehavior.strategyGait : strategyIdle.gait
-            }
-            onPress={() => onSelectEmployee('strategy')}
-            palette={palette}
-            pose={strategyPose}
-            position={
-              taskWorking
-                ? handoffBehavior.strategyPosition
-                : strategyIdle.position
-            }
-            sceneWidth={sceneSize.width}
-            status={
-              taskWorking
-                ? handoffBehavior.frame.strategy.activity
-                : getIdleActivity(strategyIdle.phase)
-            }
-            statusDetail={
-              taskWorking
-                ? handoffBehavior.frame.strategy.status
-                : getIdleStatus(strategyIdle.phase)
-            }
-          />
-          <AnimatedEmployeeActor
-            bob={taskWorking ? handoffBehavior.reviewerBob : reviewerBob}
-            depth={isSeatBoundPose(reviewerPose) ? 52 : 67}
-            employee={reviewerEmployee}
-            facing={
-              taskWorking
-                ? handoffBehavior.frame.reviewer.facing
-                : reviewerFacing
-            }
-            gait={taskWorking ? handoffBehavior.reviewerGait : reviewerGait}
-            onPress={() => onSelectEmployee('reviewer')}
-            palette={palette}
-            pose={reviewerPose}
-            position={
-              taskWorking ? handoffBehavior.reviewerPosition : reviewerPosition
-            }
-            sceneWidth={sceneSize.width}
-            status={
-              taskWorking
-                ? handoffBehavior.frame.reviewer.activity
-                : getIdleActivity(reviewerPhase)
-            }
-            statusDetail={
-              taskWorking
-                ? handoffBehavior.frame.reviewer.status
-                : taskTerminal && deliveryBehavior.bubble
-                ? deliveryBehavior.bubble
-                : getIdleStatus(reviewerPhase)
-            }
-          />
+          {!strategyGone ? (
+            <AnimatedEmployeeActor
+              bob={
+                taskWorking
+                  ? handoffBehavior.strategyBob
+                  : strategyLeaving
+                  ? strategyDeparture.bob
+                  : strategyIdle.bob
+              }
+              depth={isSeatBoundPose(strategyPose) ? 52 : 66}
+              employee={strategyEmployee}
+              facing={
+                taskWorking
+                  ? handoffBehavior.frame.strategy.facing
+                  : strategyLeaving
+                  ? strategyDeparture.facing
+                  : strategyIdle.facing
+              }
+              gait={
+                taskWorking
+                  ? handoffBehavior.strategyGait
+                  : strategyLeaving
+                  ? strategyDeparture.gait
+                  : strategyIdle.gait
+              }
+              onPress={() => onSelectEmployee('strategy')}
+              palette={palette}
+              pose={strategyPose}
+              position={
+                taskWorking
+                  ? handoffBehavior.strategyPosition
+                  : strategyLeaving
+                  ? strategyDeparture.position
+                  : strategyIdle.position
+              }
+              sceneWidth={sceneSize.width}
+              status={
+                taskWorking
+                  ? handoffBehavior.frame.strategy.activity
+                  : strategyLeaving
+                  ? 'moving'
+                  : getIdleActivity(strategyIdle.phase)
+              }
+              statusDetail={
+                taskWorking
+                  ? handoffBehavior.frame.strategy.status
+                  : strategyLeaving
+                  ? DEPARTURE_STATUS
+                  : getIdleStatus(strategyIdle.phase)
+              }
+            />
+          ) : undefined}
+          {!reviewerGone ? (
+            <AnimatedEmployeeActor
+              bob={taskWorking ? handoffBehavior.reviewerBob : reviewerBob}
+              depth={isSeatBoundPose(reviewerPose) ? 52 : 67}
+              employee={reviewerEmployee}
+              facing={
+                taskWorking
+                  ? handoffBehavior.frame.reviewer.facing
+                  : reviewerFacing
+              }
+              gait={taskWorking ? handoffBehavior.reviewerGait : reviewerGait}
+              onPress={() => onSelectEmployee('reviewer')}
+              palette={palette}
+              pose={reviewerPose}
+              position={
+                taskWorking
+                  ? handoffBehavior.reviewerPosition
+                  : reviewerPosition
+              }
+              sceneWidth={sceneSize.width}
+              status={
+                taskWorking
+                  ? handoffBehavior.frame.reviewer.activity
+                  : reviewerLeaving
+                  ? 'moving'
+                  : getIdleActivity(reviewerPhase)
+              }
+              statusDetail={
+                taskWorking
+                  ? handoffBehavior.frame.reviewer.status
+                  : reviewerLeaving
+                  ? DEPARTURE_STATUS
+                  : taskTerminal && deliveryBehavior.bubble
+                  ? deliveryBehavior.bubble
+                  : getIdleStatus(reviewerPhase)
+              }
+            />
+          ) : undefined}
 
-          <MobileEmployeeActor
-            bob={secretaryBob}
-            depth={secretaryAtDesk ? 54 : 68}
-            employee={secretaryEmployee}
-            facing={secretaryFacing}
-            gait={secretaryGait}
-            onPress={() => onSelectEmployee('secretary')}
-            palette={palette}
-            phase={secretaryPhase}
-            position={secretaryPosition}
-            sceneWidth={sceneSize.width}
-          />
-          <MobileEmployeeActor
-            bob={contentIdle.bob}
-            depth={contentAtDesk ? 52 : 68}
-            employee={contentEmployee}
-            facing={contentIdle.facing}
-            gait={contentIdle.gait}
-            onPress={() => onSelectEmployee('break')}
-            palette={palette}
-            phase={contentIdle.phase}
-            position={contentIdle.position}
-            sceneWidth={sceneSize.width}
-          />
+          {!secretaryGone ? (
+            <MobileEmployeeActor
+              bob={secretaryBob}
+              depth={secretaryAtDesk ? 54 : 68}
+              employee={secretaryEmployee}
+              facing={secretaryFacing}
+              gait={secretaryGait}
+              onPress={() => onSelectEmployee('secretary')}
+              palette={palette}
+              phase={secretaryPhase}
+              position={secretaryPosition}
+              sceneWidth={sceneSize.width}
+            />
+          ) : undefined}
+          {!contentGone ? (
+            <MobileEmployeeActor
+              bob={contentBob}
+              depth={contentAtDesk ? 52 : 68}
+              employee={contentEmployee}
+              facing={contentFacing}
+              gait={contentGait}
+              onPress={() => onSelectEmployee('break')}
+              palette={palette}
+              phase={contentPhase}
+              position={contentPosition}
+              sceneWidth={sceneSize.width}
+            />
+          ) : undefined}
         </>
       ) : undefined}
 
